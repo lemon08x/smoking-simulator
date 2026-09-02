@@ -11,6 +11,7 @@ global.wx = {
 const path = require('path')
 const calc = require(path.join(__dirname, '..', 'utils', 'calc.js'))
 const skins = require(path.join(__dirname, '..', 'utils', 'skins.js'))
+const session = require(path.join(__dirname, '..', 'utils', 'session.js'))
 
 let failed = 0
 let passed = 0
@@ -88,8 +89,30 @@ ok('初始化：初始皮肤 redgold', __store['skins'].currentId === 'redgold' 
 ok('初始化：档案含起点', typeof __store['profile'].quitStartAt === 'number')
 const r = calc.addAvoided()
 ok('入库：total 5→6 且按日聚合', r.total === 6 && calc.getDays()[T] === 1)
+const firstSession = calc.completeSession('session-one')
+const duplicateSession = calc.completeSession('session-one')
+ok('会话幂等：重复完成只入库一次', firstSession.total === 7 && duplicateSession.total === 7 && duplicateSession.duplicate)
 calc.clearAll()
 ok('清空后回到初始态', calc.getTotal() === 0 && wx.getStorageSync('skins').owned.redgold === 1)
+
+// ---------- 双模式会话 ----------
+ok('模式：合法节奏模式', session.normalizeMode('rhythm') === 'rhythm')
+ok('模式：非法值回退自由模式', session.normalizeMode('unknown') === 'free')
+ok('会话 ID：固定输入可预测', session.createSessionId(1000, 0.5) === 'smoke_rs_4zsov')
+let rhythm = session.rhythmState(0)
+ok('节奏：从吸入开始', rhythm.phase === 'inhale' && rhythm.progress === 0 && rhythm.remainingSeconds === 45)
+rhythm = session.rhythmState(2999)
+ok('节奏：3 秒前仍在吸入', rhythm.phase === 'inhale' && !rhythm.finished)
+rhythm = session.rhythmState(3000)
+ok('节奏：3 秒切到吐出', rhythm.phase === 'exhale')
+rhythm = session.rhythmState(7500)
+ok('节奏：下一轮重新吸入', rhythm.phase === 'inhale' && rhythm.cycle === 2)
+rhythm = session.rhythmState(44999)
+ok('节奏：45 秒前不能完成', !rhythm.finished && rhythm.remainingSeconds === 1)
+rhythm = session.rhythmState(45000)
+ok('节奏：45 秒完成且进度封顶', rhythm.finished && rhythm.phase === 'done' && rhythm.progress === 1 && rhythm.remainingSeconds === 0)
+rhythm = session.rhythmState(90000)
+ok('节奏：跳帧后仍正确封顶', rhythm.finished && rhythm.elapsedMs === 45000 && rhythm.progress === 1)
 
 // ---------- skins：定义完整性 ----------
 ok('共 8 款皮肤', skins.SKINS.length === 8)

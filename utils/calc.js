@@ -48,6 +48,20 @@ function addAvoided(ts = Date.now()) {
   return { total, today: days[key] }
 }
 
+// 同一个会话只入库一次。只保留最近 100 个 ID，防止存储无限增长。
+function completeSession(sessionId, ts = Date.now()) {
+  if (!sessionId) return Object.assign({ duplicate: false }, addAvoided(ts))
+  const completed = wx.getStorageSync('completedSessions') || []
+  if (completed.indexOf(sessionId) >= 0) {
+    const days = getDays()
+    return { total: getTotal(), today: days[todayStr(ts)] || 0, duplicate: true }
+  }
+  const result = addAvoided(ts)
+  completed.push(sessionId)
+  wx.setStorageSync('completedSessions', completed.slice(-100))
+  return Object.assign({ duplicate: false }, result)
+}
+
 // ---------- 换算 ----------
 function moneyOf(total, profile) {
   return +(total * profile.pricePerPack / CIGS_PER_PACK).toFixed(1)
@@ -171,7 +185,7 @@ function initStorage() {
 }
 
 function clearAll() {
-  ;['profile', 'days', 'total', 'skins', 'logs', 'totalSmoked'].forEach(k => wx.removeStorageSync(k))
+  ;['profile', 'days', 'total', 'skins', 'logs', 'totalSmoked', 'completedSessions'].forEach(k => wx.removeStorageSync(k))
   initStorage()
 }
 
@@ -185,6 +199,7 @@ module.exports = {
   getDays,
   getTotal,
   addAvoided,
+  completeSession,
   moneyOf,
   lifeMinutesOf,
   lifeText,
