@@ -47,6 +47,30 @@
       🎁 攒满一包，可开盒 ×{{tickets}}
     </view>
     <button class="btn-gold btn-light" bindtap="onSmoke">🚬 点一根</button>
-    <view class="hint">按住吸入 · 松开吐烟</view>
+    <view class="hint">自由掌控，或跟随 45 秒节奏</view>
+  </view>
+
+  <view wx:if="{{showModePicker}}" class="mode-mask" bindtap="closeModePicker">
+    <view class="mode-sheet anim-pop" catchtap="noop">
+      <view class="mode-title">这根怎么抽？</view>
+      <view class="mode-subtitle">两种玩法都会自然燃尽并自动结算</view>
+      <button class="mode-option {{lastMode === 'free' ? 'mode-last' : ''}}" data-mode="free" bindtap="startMode">
+        <view class="mode-icon">🚬</view>
+        <view class="mode-copy">
+          <text class="mode-name">自由模式</text>
+          <text class="mode-desc">按住吸入 · 松开吐烟</text>
+        </view>
+        <text class="mode-arrow">›</text>
+      </button>
+      <button class="mode-option {{lastMode === 'rhythm' ? 'mode-last' : ''}}" data-mode="rhythm" bindtap="startMode">
+        <view class="mode-icon">〰️</view>
+        <view class="mode-copy">
+          <text class="mode-name">45 秒节奏</text>
+          <text class="mode-desc">跟随振动 · 自然呼吸</text>
+        </view>
+        <text class="mode-arrow">›</text>
+      </button>
+      <button class="mode-cancel" bindtap="closeModePicker">先等等</button>
+    </view>
   </view>
 </view>

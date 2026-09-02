@@ -133,3 +133,83 @@
   color: #8a8f99;
   letter-spacing: 4rpx;
 }
+
+/* 模式选择 */
+.mode-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(7, 8, 11, 0.72);
+}
+.mode-sheet {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 40rpx 32rpx calc(32rpx + env(safe-area-inset-bottom));
+  border-radius: 36rpx 36rpx 0 0;
+  background: #1e2128;
+  border-top: 1rpx solid #343944;
+}
+.mode-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #f1f2f4;
+}
+.mode-subtitle {
+  margin-top: 8rpx;
+  margin-bottom: 26rpx;
+  font-size: 23rpx;
+  color: #8a8f99;
+}
+.mode-option {
+  width: 100%;
+  min-height: 116rpx;
+  margin-top: 18rpx;
+  padding: 20rpx 24rpx;
+  display: flex;
+  align-items: center;
+  text-align: left;
+  color: #d8dce2;
+  background: #262a32;
+  border: 1rpx solid #343944;
+  border-radius: 22rpx;
+}
+.mode-option::after {
+  border: 0;
+}
+.mode-last {
+  border-color: rgba(200, 160, 99, 0.72);
+  background: rgba(200, 160, 99, 0.1);
+}
+.mode-icon {
+  width: 68rpx;
+  font-size: 36rpx;
+}
+.mode-copy {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.mode-name {
+  font-size: 29rpx;
+  font-weight: 600;
+}
+.mode-desc {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #989eaa;
+}
+.mode-arrow {
+  font-size: 44rpx;
+  color: #c8a063;
+}
+.mode-cancel {
+  margin-top: 24rpx;
+  color: #8a8f99;
+  background: transparent;
+  font-size: 25rpx;
+}
+.mode-cancel::after {
+  border: 0;
+}

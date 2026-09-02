@@ -1,6 +1,7 @@
 // 首页：数据总览 + 当前烟盒 + 点一根入口
 const calc = require('../../utils/calc')
 const skins = require('../../utils/skins')
+const session = require('../../utils/session')
 
 Page({
   data: {
@@ -12,7 +13,9 @@ Page({
     skin: null,
     rarityName: '',
     tickets: 0,
-    ms: { title: '', desc: '', pct: 0 }
+    ms: { title: '', desc: '', pct: 0 },
+    showModePicker: false,
+    lastMode: session.MODE_FREE
   },
 
   onShow() {
@@ -36,13 +39,27 @@ Page({
       skin,
       rarityName: skins.RARITY[skin.rarity].name,
       tickets,
-      ms: calc.nextMilestone(profile.quitStartAt || Date.now())
+      ms: calc.nextMilestone(profile.quitStartAt || Date.now()),
+      lastMode: session.normalizeMode(wx.getStorageSync('lastSmokeMode'))
     })
   },
 
   onSmoke() {
-    wx.navigateTo({ url: '/pages/smoke/smoke' })
+    this.setData({ showModePicker: true })
   },
+
+  closeModePicker() {
+    this.setData({ showModePicker: false })
+  },
+
+  startMode(e) {
+    const mode = session.normalizeMode(e.currentTarget.dataset.mode)
+    wx.setStorageSync('lastSmokeMode', mode)
+    this.setData({ showModePicker: false, lastMode: mode })
+    wx.navigateTo({ url: '/pages/smoke/smoke?mode=' + mode })
+  },
+
+  noop() {},
 
   goBox() {
     wx.switchTab({ url: '/pages/box/box' })
