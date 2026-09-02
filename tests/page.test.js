@@ -73,6 +73,18 @@ rhythm.finish()
 ok('节奏页：重复 finish 不重复入库', calc.getTotal() === 1)
 rhythm.onUnload()
 
+const rhythmLifecycle = loadPage('pages/smoke/smoke.js')
+rhythmLifecycle.onLoad({ mode: 'rhythm' })
+rhythmLifecycle.node = {}
+rhythmLifecycle.startLoop = () => {}
+rhythmLifecycle.stopLoop = () => {}
+rhythmLifecycle.startRhythm()
+rhythmLifecycle.onHide()
+ok('节奏页：切后台停止振动', !rhythmLifecycle.rhythmVibrationTimer)
+rhythmLifecycle.onShow()
+ok('节奏页：返回吸入阶段恢复振动', !!rhythmLifecycle.rhythmVibrationTimer)
+rhythmLifecycle.onUnload()
+
 // 收藏页显示奖励账户，并可进入免费单抽
 const box = loadPage('pages/box/box.js')
 box.refresh()
@@ -95,8 +107,9 @@ const free = loadPage('pages/smoke/smoke.js')
 free.onLoad({ mode: 'free' })
 free.spawnExhale = () => {}
 free.onTouchStart()
-free.onTouchEnd()
-ok('自由页：按住松开计一口', free.data.puffs === 1 && free.started === true)
+free.stopLoop = () => {}
+free.onHide()
+ok('自由页：切后台等同松开并计一口', free.data.puffs === 1 && free.started === true && free.inhaling === false)
 free.onUnload()
 
 console.log(`\n结果：${passed} 通过，${failed} 失败`)

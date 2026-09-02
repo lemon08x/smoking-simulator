@@ -76,7 +76,7 @@ Page({
       // 等页面转场动画结束（~250ms）再开始绘制：
       // canvas 同层渲染在转场期间可能抢先出现，看起来像画在上一页上
       this.canvasStartTimer = setTimeout(() => {
-        if (this.destroyed) return
+        if (this.destroyed || this.hidden) return
         if (this.mode === session.MODE_RHYTHM && !this.rhythmStartedAt) this.startRhythm()
         if (!this.rafActive) this.startLoop()
       }, 250)
@@ -85,8 +85,10 @@ Page({
 
   onShow() {
     this.hidden = false
+    if (this.mode === session.MODE_RHYTHM && this.node && !this.rhythmStartedAt) this.startRhythm()
     if (this.mode === session.MODE_RHYTHM && this.rhythmStartedAt && !this.data.finished) {
       this.syncRhythm(Date.now())
+      if (this.lastRhythmPhase === 'inhale' && !this.rhythmVibrationTimer) this.startRhythmVibration()
     }
     // 结算卡在场时场景已静止，不重启循环
     if (this.node && !this.rafActive && !this.data.showSettle) this.startLoop()
@@ -94,6 +96,7 @@ Page({
 
   onHide() {
     this.hidden = true
+    if (this.mode === session.MODE_FREE && this.inhaling) this.onTouchEnd()
     this.stopRhythmVibration()
     this.stopLoop()
   },
