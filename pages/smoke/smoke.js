@@ -1,8 +1,7 @@
 // 抽烟会话页：Canvas 香烟 + 按住吸入/松开吐烟 + 结算
 const calc = require('../../utils/calc')
 const skins = require('../../utils/skins')
-
-const BURN_MS = 12000 // 累计按住 12 秒烧完一根
+const session = require('../../utils/session')
 
 // 精灵图模块级缓存：同皮肤重复进入页面不重复烘焙
 const spriteCache = {}
@@ -14,14 +13,28 @@ Page({
     puffs: 0,
     finished: false,
     showSettle: false,
-    settle: null
+    settle: null,
+    mode: session.MODE_FREE,
+    modeName: session.MODES.free.name,
+    rhythmPhase: 'inhale',
+    rhythmText: '吸入',
+    remainingSeconds: 45,
+    rhythmCycle: 1
   },
 
-  onLoad() {
+  onLoad(options = {}) {
+    const mode = session.normalizeMode(options.mode)
     const skinStore = wx.getStorageSync('skins') || {}
     const skin = skins.getSkin(skinStore.currentId)
     this.skin = skin
-    this.setData({ skin })
+    this.mode = mode
+    this.sessionId = session.createSessionId()
+    this.setData({
+      skin,
+      mode,
+      modeName: session.getMode(mode).name,
+      showHint: mode === session.MODE_FREE
+    })
     // 场景状态
     this.burn = 0
     this.inhaling = false
@@ -29,6 +42,8 @@ Page({
     this.added = false
     this.particles = []
     this.wispTimer = 0
+    this.hidden = false
+    this.destroyed = false
   },
 
   onReady() {
@@ -58,23 +73,36 @@ Page({
       }
       // 等页面转场动画结束（~250ms）再开始绘制：
       // canvas 同层渲染在转场期间可能抢先出现，看起来像画在上一页上
-      setTimeout(() => {
+      this.canvasStartTimer = setTimeout(() => {
+        if (this.destroyed) return
+        if (this.mode === session.MODE_RHYTHM && !this.rhythmStartedAt) this.startRhythm()
         if (!this.rafActive) this.startLoop()
       }, 250)
     })
   },
 
   onShow() {
+    this.hidden = false
+    if (this.mode === session.MODE_RHYTHM && this.rhythmStartedAt && !this.data.finished) {
+      this.syncRhythm(Date.now())
+    }
     // 结算卡在场时场景已静止，不重启循环
     if (this.node && !this.rafActive && !this.data.showSettle) this.startLoop()
   },
 
   onHide() {
+    this.hidden = true
+    this.stopRhythmVibration()
     this.stopLoop()
   },
 
   onUnload() {
+    this.destroyed = true
+    this.stopRhythmVibration()
     this.stopLoop()
+    clearTimeout(this.canvasStartTimer)
+    clearTimeout(this.settleTimer)
+    clearTimeout(this.stopTimer)
   },
 
   startLoop() {
@@ -96,22 +124,76 @@ Page({
 
   // ---------- 交互 ----------
   onTouchStart() {
-    if (this.data.finished || this.inhaling) return
+    if (this.mode !== session.MODE_FREE || this.data.finished || this.inhaling) return
     this.inhaling = true
     this.puffStart = Date.now()
     if (!this.started) {
       this.started = true
+      this.sessionStartedAt = this.puffStart
       this.setData({ showHint: false })
     }
     wx.vibrateShort({ type: 'light' })
   },
 
   onTouchEnd() {
-    if (!this.inhaling) return
+    if (this.mode !== session.MODE_FREE || !this.inhaling) return
     this.inhaling = false
     const dur = (Date.now() - this.puffStart) / 1000
     this.setData({ puffs: this.data.puffs + 1 })
     this.spawnExhale(dur)
+  },
+
+  startRhythm() {
+    this.started = true
+    this.rhythmStartedAt = Date.now()
+    this.sessionStartedAt = this.rhythmStartedAt
+    this.lastRhythmPhase = ''
+    this.syncRhythm(this.rhythmStartedAt)
+  },
+
+  syncRhythm(now) {
+    if (!this.rhythmStartedAt || this.data.finished) return
+    const state = session.rhythmState(now - this.rhythmStartedAt)
+    this.burn = state.progress
+    this.inhaling = state.phase === 'inhale'
+
+    const changed = state.phase !== this.lastRhythmPhase
+    if (changed) {
+      this.lastRhythmPhase = state.phase
+      if (state.phase === 'inhale') this.startRhythmVibration()
+      else this.stopRhythmVibration()
+    }
+
+    if (
+      changed ||
+      state.remainingSeconds !== this.data.remainingSeconds ||
+      state.cycle !== this.data.rhythmCycle
+    ) {
+      this.setData({
+        rhythmPhase: state.phase,
+        rhythmText: state.phase === 'inhale' ? '吸入' : (state.phase === 'exhale' ? '吐出' : '完成'),
+        remainingSeconds: state.remainingSeconds,
+        rhythmCycle: state.cycle,
+        puffs: Math.min(6, state.cycle)
+      })
+    }
+    if (state.finished) this.finish()
+  },
+
+  startRhythmVibration() {
+    this.stopRhythmVibration()
+    if (this.hidden || this.data.finished) return
+    const pulse = () => {
+      if (this.hidden || this.data.finished || this.lastRhythmPhase !== 'inhale') return
+      wx.vibrateShort({ type: 'light', fail() {} })
+    }
+    pulse()
+    this.rhythmVibrationTimer = setInterval(pulse, 650)
+  },
+
+  stopRhythmVibration() {
+    clearInterval(this.rhythmVibrationTimer)
+    this.rhythmVibrationTimer = null
   },
 
   onBack() {
@@ -132,8 +214,10 @@ Page({
 
   // ---------- 结算 ----------
   finish() {
+    if (this.data.finished) return
     this.setData({ finished: true })
     this.inhaling = false
+    this.stopRhythmVibration()
     this.finishAt = this.t || Date.now() // 烟蒂渐隐的起点
     wx.vibrateShort({ type: 'heavy' })
     // 清场：残留烟雾 0.5 秒内散尽，避免盖住随后弹出的结算卡
@@ -143,25 +227,27 @@ Page({
       }
     }
     this.spawnAshFall()
-    setTimeout(() => this.showSettle(), 900)
+    this.prepareSettle()
+    this.settleTimer = setTimeout(() => this.showSettle(), 900)
     // 烟灰落定后场景静止：停掉渲染循环，结算期间不再空转
-    setTimeout(() => {
+    this.stopTimer = setTimeout(() => {
       if (this.data.finished) this.stopLoop()
     }, 2400)
   },
 
-  showSettle() {
+  prepareSettle() {
     if (this.added) return
     this.added = true
-    const { total } = calc.addAvoided()
-    const profile = calc.getProfile()
+    const result = calc.completeSession(this.sessionId)
+    const total = result.total
     const inPack = total % calc.CIGS_PER_PACK
     const ticketEarned = inPack === 0
     this.setData({
-      showSettle: true,
       settle: {
         total,
-        moneyText: calc.moneyText(calc.moneyOf(1, profile)),
+        modeName: this.data.modeName,
+        durationText: this.durationText(),
+        puffs: this.data.puffs,
         line: skins.pick(skins.SETTLEMENT_LINES),
         inPack: ticketEarned ? calc.CIGS_PER_PACK : inPack,
         ticketEarned
@@ -169,14 +255,42 @@ Page({
     })
   },
 
+  showSettle() {
+    if (!this.destroyed && this.data.settle) this.setData({ showSettle: true })
+  },
+
+  durationText() {
+    const startedAt = this.sessionStartedAt || Date.now()
+    const elapsed = this.mode === session.MODE_RHYTHM
+      ? session.RHYTHM_DURATION_MS
+      : Math.max(1000, Date.now() - startedAt)
+    return Math.max(1, Math.round(elapsed / 1000)) + ' 秒'
+  },
+
   onAgain() {
+    this.stopRhythmVibration()
     this.burn = 0
     this.inhaling = false
     this.started = false
     this.added = false
     this.finishAt = 0
     this.particles = []
-    this.setData({ showSettle: false, finished: false, puffs: 0, showHint: true })
+    this.sessionId = session.createSessionId()
+    this.rhythmStartedAt = 0
+    this.sessionStartedAt = 0
+    this.lastRhythmPhase = ''
+    this.setData({
+      showSettle: false,
+      finished: false,
+      puffs: 0,
+      showHint: this.mode === session.MODE_FREE,
+      settle: null,
+      rhythmPhase: 'inhale',
+      rhythmText: '吸入',
+      remainingSeconds: 45,
+      rhythmCycle: 1
+    })
+    if (this.mode === session.MODE_RHYTHM) this.startRhythm()
     this.startLoop()
   },
 
@@ -322,11 +436,16 @@ Page({
     this.frames = (this.frames || 0) + 1
     this.frameMs = (this.frameMs || 0) + dt * 1000
 
-    if (this.inhaling) {
-      this.burn = Math.min(1, this.burn + dt * (1000 / BURN_MS))
+    if (this.mode === session.MODE_RHYTHM && !this.data.finished) {
+      this.syncRhythm(Date.now())
+      if (this.inhaling && Math.random() < 0.7) this.spawnSuck()
+    } else if (this.inhaling) {
+      this.burn = Math.min(1, this.burn + dt * (1000 / session.FREE_BURN_MS))
       if (Math.random() < 0.7) this.spawnSuck()
       if (this.burn >= 1) this.finish()
-    } else if (!this.data.finished) {
+    }
+
+    if (!this.inhaling && !this.data.finished) {
       this.wispTimer += dt
       if (this.wispTimer > 0.32) {
         this.wispTimer = 0

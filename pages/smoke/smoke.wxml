@@ -20,23 +20,36 @@
   <!-- 自定义返回 -->
   <view class="nav-back" bindtap="onBack">‹</view>
 
+  <view class="mode-pill">{{modeName}}</view>
+
   <!-- 操作提示 -->
-  <view wx:if="{{showHint}}" class="hint anim-fade-up">按住吸入 · 松开吐烟</view>
-  <view wx:if="{{puffs > 0 && !finished}}" class="puff-count">第 {{puffs}} 口</view>
+  <view wx:if="{{mode === 'free' && showHint}}" class="hint anim-fade-up">按住吸入 · 松开吐烟</view>
+  <view wx:if="{{mode === 'free' && puffs > 0 && !finished}}" class="puff-count">第 {{puffs}} 口</view>
+
+  <view wx:if="{{mode === 'rhythm' && !finished}}" class="rhythm-guide rhythm-{{rhythmPhase}}">
+    <view class="rhythm-orb"></view>
+    <view class="rhythm-action">{{rhythmText}}</view>
+    <view class="rhythm-sub">第 {{rhythmCycle}}/6 轮 · 还剩 {{remainingSeconds}} 秒</view>
+    <view class="rhythm-progress"><view class="rhythm-progress-fill" style="width: {{(45 - remainingSeconds) / 45 * 100}}%"></view></view>
+  </view>
 
   <!-- 结算卡 -->
   <view wx:if="{{showSettle}}" class="settle-mask">
     <view class="settle-card anim-pop">
-      <view class="s-badge">第 {{settle.total}} 根 · 戒掉了</view>
+      <view class="s-badge">第 {{settle.total}} 根 · 完成</view>
       <view class="s-line">「{{settle.line}}」</view>
       <view class="s-rows">
         <view class="s-row">
-          <text class="s-k">这根省下</text>
-          <text class="s-v">{{settle.moneyText}}</text>
+          <text class="s-k">玩法</text>
+          <text class="s-v">{{settle.modeName}}</text>
         </view>
         <view class="s-row">
-          <text class="s-k">寿命 +</text>
-          <text class="s-v">11 分钟</text>
+          <text class="s-k">用时</text>
+          <text class="s-v">{{settle.durationText}}</text>
+        </view>
+        <view class="s-row">
+          <text class="s-k">节奏</text>
+          <text class="s-v">{{settle.puffs}} 口</text>
         </view>
       </view>
       <view class="s-pack">
@@ -50,7 +63,7 @@
       </view>
       <view class="s-btns">
         <button wx:if="{{settle.ticketEarned}}" class="btn-gold s-btn" bindtap="goBox">开盒</button>
-        <button class="btn-gold s-btn {{settle.ticketEarned ? 's-btn-ghost' : ''}}" bindtap="onAgain">再戒一根</button>
+        <button class="btn-gold s-btn {{settle.ticketEarned ? 's-btn-ghost' : ''}}" bindtap="onAgain">再来一根</button>
         <button class="btn-ghost s-btn" bindtap="goHome">回首页</button>
       </view>
     </view>
