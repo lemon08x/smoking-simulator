@@ -1,27 +1,48 @@
-<view class="draw-page">
-  <!-- 开盒前：神秘烟盒 -->
-  <view wx:if="{{phase !== 'reveal'}}" class="stage">
-    <view class="mystery {{phase === 'shaking' ? 'shaking' : ''}}" bindtap="onOpen">
-      <pack skin="{{mystery}}" size="draw" />
-    </view>
-    <view class="draw-kind">{{kindName}}</view>
-    <view class="tip">{{phase === 'shaking' ? '正在开盒…' : '点一下，开盒'}}</view>
+<view class="draw-page phase-{{phase}}">
+  <view class="draw-noise"></view>
+  <view class="draw-head anim-fade-up">
+    <view class="draw-kicker">OPEN THE ARCHIVE</view>
+    <view class="draw-title">{{kindName}}</view>
     <view class="cost-tip">{{costText}}</view>
   </view>
 
-  <!-- 揭晓 -->
-  <view wx:if="{{phase === 'reveal'}}" class="stage">
+  <view wx:if="{{phase !== 'reveal'}}" class="stage ready-stage">
+    <view class="orbit orbit-one"></view>
+    <view class="orbit orbit-two"></view>
+    <view class="mystery-wrap {{phase === 'shaking' ? 'shaking' : ''}}" bindtap="onOpen">
+      <view class="pack-shadow"></view>
+      <pack skin="{{mystery}}" size="draw" />
+    </view>
+    <view class="open-copy">
+      <view class="open-line">{{phase === 'shaking' ? '正在拆开封条' : '里面会是哪一款？'}}</view>
+      <view class="open-sub">{{phase === 'shaking' ? '稍等片刻' : '轻触烟盒揭晓收藏'}}</view>
+    </view>
+    <view class="open-trigger {{phase === 'shaking' ? 'trigger-busy' : ''}}" bindtap="onOpen">
+      <text>{{phase === 'shaking' ? '开启中' : '轻触开启'}}</text>
+      <view class="trigger-line"></view>
+    </view>
+  </view>
+
+  <view wx:if="{{phase === 'reveal'}}" class="stage reveal-stage">
+    <view class="reveal-kicker anim-fade-up">{{isNew ? 'NEW COLLECTION' : 'COLLECTION FOUND'}}</view>
     <view class="reveal-glow glow-{{result.rarity}}"></view>
-    <view class="result-card anim-flip">
-      <pack skin="{{result}}" size="draw" />
-    </view>
+    <view class="result-card anim-flip"><pack skin="{{result}}" size="draw" /></view>
+
     <view class="result-meta anim-fade-up">
+      <view class="result-topline">
+        <view class="rarity-tag rarity-{{result.rarity}}">{{resultRarity.name}}</view>
+        <text wx:if="{{isNew}}" class="new-tag">NEW</text>
+      </view>
       <view class="result-name">{{result.name}}</view>
-      <view class="rarity-tag rarity-{{result.rarity}}">{{resultRarity.name}}</view>
-      <view class="result-line">{{line}}</view>
-      <view wx:if="{{count > 1}}" class="result-count">已拥有 ×{{count}}</view>
-      <view wx:if="{{refund > 0}}" class="refund">重复返还烟标碎片 ×{{refund}}</view>
+      <view class="result-line">“{{line}}”</view>
+      <view wx:if="{{count > 1}}" class="duplicate-result">
+        <text>收藏数量 ×{{count}}</text>
+        <text wx:if="{{refund > 0}}" class="refund">烟标碎片返还 +{{refund}}</text>
+      </view>
     </view>
-    <button class="btn-gold ok-btn anim-fade-up" bindtap="onOk">收下并换上</button>
+
+    <button class="btn-gold ok-btn anim-fade-up" bindtap="onOk">
+      <text>收下并换上</text><text class="ok-arrow">→</text>
+    </button>
   </view>
 </view>

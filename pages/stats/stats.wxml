@@ -1,61 +1,73 @@
-<view class="container">
-  <!-- 累计 -->
-  <view class="card anim-fade-up">
-    <view class="grid4">
-      <view class="item">
-        <text class="v">{{total}}</text>
-        <text class="k">累计戒掉</text>
-      </view>
-      <view class="item">
-        <text class="v">{{moneyText}}</text>
-        <text class="k">省下</text>
-      </view>
-      <view class="item">
-        <text class="v">{{lifeText}}</text>
-        <text class="k">寿命 +</text>
-      </view>
-      <view class="item">
-        <text class="v">{{streak}}</text>
-        <text class="k">连续天数</text>
-      </view>
-    </view>
-    <view class="sub-row">最长连续 {{longest}} 天 · 今天已挡下 {{todayCount}} 根（基线每天 {{cigsPerDay}} 根）</view>
+<view class="container stats-page">
+  <view class="page-head anim-fade-up">
+    <view class="page-kicker">YOUR PROGRESS</view>
+    <view class="page-title">这段时间</view>
+    <view class="page-subtitle">每一次挡下烟瘾，都被安静地记录下来</view>
   </view>
 
-  <!-- 本包进度 -->
-  <view class="card anim-fade-up">
-    <view class="card-head">本包进度 <text class="gold">{{inPack}}/20</text></view>
-    <view class="bar">
-      <view class="fill" style="width: {{inPack * 5}}%"></view>
-    </view>
-    <view class="sub-row">攒满一包可开盒抽新烟盒</view>
+  <view class="overview anim-pop">
+    <view class="overview-kicker">TOTAL COMPLETED</view>
+    <view class="overview-number">{{total}}</view>
+    <view class="overview-unit">根已经完成</view>
+    <view class="overview-line"></view>
+    <view class="overview-foot">今天 {{todayCount}} 根 · 最长连续 {{longest}} 天</view>
   </view>
 
-  <!-- 近 30 天热力图 -->
-  <view class="card anim-fade-up">
-    <view class="card-head">近 30 天</view>
+  <view class="metric-grid anim-fade-up">
+    <view class="metric-card">
+      <view class="metric-mark money-mark">¥</view>
+      <text class="metric-value">{{moneyText}}</text>
+      <text class="metric-label">累计省下</text>
+    </view>
+    <view class="metric-card">
+      <view class="metric-mark time-mark">＋</view>
+      <text class="metric-value">{{lifeText}}</text>
+      <text class="metric-label">赢回时间</text>
+    </view>
+    <view class="metric-card">
+      <view class="metric-mark streak-mark">◇</view>
+      <text class="metric-value">{{streak}} 天</text>
+      <text class="metric-label">当前连续</text>
+    </view>
+  </view>
+
+  <view class="card reward-progress anim-fade-up">
+    <view class="section-head">
+      <view>
+        <view class="section-kicker">NEXT GUARANTEE</view>
+        <view class="section-title">稀有保底进度</view>
+      </view>
+      <view class="progress-number"><text>{{inPack}}</text> / 20</view>
+    </view>
+    <view class="progress-track"><view class="progress-fill" style="width: {{inPack * 5}}%"></view></view>
+    <view class="card-note">每 20 次有效完成，可开启一次至少稀有的烟盒</view>
+  </view>
+
+  <view class="card heat-card anim-fade-up">
+    <view class="section-head">
+      <view>
+        <view class="section-kicker">LAST 30 DAYS</view>
+        <view class="section-title">最近活跃</view>
+      </view>
+      <view class="section-meta">基线 {{cigsPerDay}} 根 / 天</view>
+    </view>
     <view class="heat">
-      <view wx:for="{{cells}}" wx:key="key" class="cell lv{{item.level}}"></view>
+      <view wx:for="{{cells}}" wx:key="key" class="heat-cell lv{{item.level}}"></view>
     </view>
     <view class="heat-legend">
-      <text>少</text>
-      <view class="cell lv0"></view>
-      <view class="cell lv1"></view>
-      <view class="cell lv2"></view>
-      <view class="cell lv3"></view>
-      <text>多</text>
+      <text>少</text><view class="legend-dot lv0"></view><view class="legend-dot lv1"></view><view class="legend-dot lv2"></view><view class="legend-dot lv3"></view><text>多</text>
     </view>
   </view>
 
-  <!-- 健康恢复时间线 -->
-  <view class="card anim-fade-up">
-    <view class="card-head">身体正在恢复</view>
+  <view class="card timeline-card anim-fade-up">
+    <view class="section-kicker">RECOVERY TIMELINE</view>
+    <view class="section-title timeline-title">身体正在恢复</view>
     <view class="timeline">
-      <view wx:for="{{milestones}}" wx:key="title" class="t-item {{item.reached ? 'on' : ''}}">
-        <view class="t-dot"></view>
-        <view class="t-body">
-          <view class="t-title">{{item.title}} <text wx:if="{{item.reached}}" class="t-done">✓</text></view>
-          <view class="t-desc">{{item.desc}}</view>
+      <view wx:for="{{milestones}}" wx:key="title" class="timeline-item {{item.reached ? 'reached' : ''}}">
+        <view class="timeline-axis"><view class="timeline-dot"></view><view class="timeline-line"></view></view>
+        <view class="timeline-body">
+          <view class="timeline-name">{{item.title}} <text wx:if="{{item.reached}}" class="done">完成</text></view>
+          <view class="timeline-desc">{{item.desc}}</view>
         </view>
       </view>
     </view>

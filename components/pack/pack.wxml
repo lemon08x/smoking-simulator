@@ -1,15 +1,21 @@
 <view class="pack size-{{size}} {{mode === 'silhouette' ? 'silhouette' : ''}}" style="{{styleMain}}">
+  <view class="pack-grain"></view>
   <view class="lid" style="{{styleLid}}">
     <view class="lid-gloss"></view>
+    <view wx:if="{{mode !== 'silhouette'}}" class="edition">NO. 01</view>
   </view>
   <view class="lid-line"></view>
   <view class="pattern pattern-{{skin.box.pattern}}"></view>
   <view class="band" style="{{styleBand}}"></view>
 
   <view class="brand-box">
+    <view class="brand-rule" style="{{styleText}}"></view>
     <view class="brand" style="{{styleText}}">{{mode === 'silhouette' ? '' : skin.name}}</view>
     <view class="label" style="{{styleText}}">{{mode === 'silhouette' ? '' : skin.label}}</view>
+    <view class="brand-rule rule-bottom" style="{{styleText}}"></view>
   </view>
+
+  <view wx:if="{{mode !== 'silhouette'}}" class="pack-footer" style="{{styleText}}">COLLECTION EDITION</view>
 
   <view wx:if="{{mode === 'silhouette'}}" class="q">?</view>
 </view>

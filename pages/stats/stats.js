@@ -1,5 +1,6 @@
 // 统计：累计数据 + 热力图 + 健康恢复时间线
 const calc = require('../../utils/calc')
+const rewards = require('../../utils/rewards')
 
 Page({
   data: {
@@ -23,13 +24,14 @@ Page({
     const profile = calc.getProfile()
     const days = calc.getDays()
     const total = calc.getTotal()
+    const account = rewards.getAccount()
     this.setData({
       total,
       moneyText: calc.moneyText(calc.moneyOf(total, profile)),
       lifeText: calc.lifeText(calc.lifeMinutesOf(total)),
       streak: calc.streakOf(days),
       longest: calc.longestOf(days),
-      inPack: total % calc.CIGS_PER_PACK,
+      inPack: account.rewardedCompletions % calc.CIGS_PER_PACK,
       todayCount: days[calc.todayStr()] || 0,
       cigsPerDay: profile.cigsPerDay,
       cells: calc.heatmapOf(days, 30),

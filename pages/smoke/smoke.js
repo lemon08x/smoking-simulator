@@ -22,6 +22,7 @@ Page({
     rhythmText: '吸入',
     remainingSeconds: 45,
     rhythmCycle: 1,
+    rhythmRounds: [1, 2, 3, 4, 5, 6],
     rhythmFeedback: '',
     rhythmFeedbackTone: ''
   },
@@ -334,6 +335,7 @@ Page({
         durationText: this.durationText(),
         puffs: this.data.puffs,
         grade,
+        scorePercent: grade ? Math.round(grade.ratio * 100) : 0,
         line: grade ? gradeLines[grade.key] : skins.pick(skins.SETTLEMENT_LINES),
         inPack: inPack === 0 && account.rewardedCompletions > 0 ? calc.CIGS_PER_PACK : inPack,
         ticketEarned: reward.packDraws > 0,

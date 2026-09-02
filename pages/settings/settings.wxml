@@ -1,49 +1,66 @@
-<view class="container">
-  <view class="card anim-fade-up">
-    <view class="card-head">我的档案</view>
+<view class="container settings-page">
+  <view class="page-head anim-fade-up">
+    <view class="page-kicker">PREFERENCES</view>
+    <view class="page-title">个人设置</view>
+    <view class="page-subtitle">这些数据只用于计算你的累计进度</view>
+  </view>
 
-    <view class="row">
-      <view class="row-main">
-        <view class="row-title">每包烟价</view>
-        <view class="row-sub">用于计算省下的钱（按 20 根/包折算）</view>
-      </view>
-      <view class="price-input">
-        <text class="yen">¥</text>
-        <input
-          type="digit"
-          value="{{profile.pricePerPack}}"
-          bindblur="onPriceInput"
-          placeholder="20"
-        />
+  <view class="profile-card anim-fade-up">
+    <view class="profile-head">
+      <view class="profile-monogram">一</view>
+      <view>
+        <view class="profile-title">我的档案</view>
+        <view class="profile-sub">LOCAL PROFILE · 仅保存在本机</view>
       </view>
     </view>
 
-    <view class="row">
+    <view class="setting-row">
+      <view class="setting-icon">¥</view>
+      <view class="row-main">
+        <view class="row-title">每包烟价</view>
+        <view class="row-sub">按每包 20 根折算累计省下金额</view>
+      </view>
+      <view class="price-input">
+        <text>¥</text>
+        <input type="digit" value="{{profile.pricePerPack}}" bindblur="onPriceInput" placeholder="20" />
+      </view>
+    </view>
+
+    <view class="setting-row">
+      <view class="setting-icon">日</view>
       <view class="row-main">
         <view class="row-title">每天烟量基线</view>
-        <view class="row-sub">以前一天大概抽多少根</view>
+        <view class="row-sub">用于对照今天挡下的数量</view>
       </view>
       <picker range="{{cigOptions}}" value="{{cigIndex}}" bindchange="onCigsChange">
-        <view class="picker-val">{{profile.cigsPerDay}} 根 ›</view>
+        <view class="picker-value">{{profile.cigsPerDay}} 根 <text>›</text></view>
       </picker>
     </view>
 
-    <view class="row">
+    <view class="setting-row last-row">
+      <view class="setting-icon">始</view>
       <view class="row-main">
         <view class="row-title">戒烟起点</view>
-        <view class="row-sub">健康恢复时间线从这天开始算</view>
+        <view class="row-sub">身体恢复时间线从这天开始</view>
       </view>
       <picker mode="date" value="{{quitDateStr || todayStr}}" end="{{todayStr}}" bindchange="onDateChange">
-        <view class="picker-val">{{quitDateStr || '选择日期'}} ›</view>
+        <view class="picker-value">{{quitDateStr || '选择日期'}} <text>›</text></view>
       </picker>
     </view>
   </view>
 
-  <button class="btn-danger anim-fade-up" bindtap="onClear">清空所有数据</button>
+  <view class="about-card anim-fade-up">
+    <view class="about-mark">ONE LESS</view>
+    <view class="about-title">先赢下眼前这一根</view>
+    <view class="about-copy">每完成一根约对应 11 分钟预期寿命，仅作轻量激励参考，不作为医疗建议。</view>
+    <view class="version">戒一根 · VERSION 1.0</view>
+  </view>
 
-  <view class="about">
-    <view>戒一根 v1.0</view>
-    <view>每戒一根 ≈ 挽回 11 分钟预期寿命（流行病学估算，仅作激励用途）</view>
-    <view>烟瘾通常 3 分钟内自然消退——先赢眼前这一根。</view>
+  <view class="danger-zone anim-fade-up">
+    <view>
+      <view class="danger-title">重新开始</view>
+      <view class="danger-sub">将删除所有进度和烟盒收藏</view>
+    </view>
+    <button class="danger-button" bindtap="onClear">清空数据</button>
   </view>
 </view>
