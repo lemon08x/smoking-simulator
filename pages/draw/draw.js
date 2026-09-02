@@ -1,6 +1,6 @@
 // 开盒抽奖：抖动 → 翻转揭晓，稀有度光效 + 重复彩蛋
-const calc = require('../../utils/calc')
 const skins = require('../../utils/skins')
+const rewards = require('../../utils/rewards')
 
 Page({
   data: {
@@ -10,35 +10,54 @@ Page({
     resultRarity: null,
     isNew: false,
     line: '',
-    count: 0
+    count: 0,
+    kind: 'single',
+    kindName: '单抽',
+    costText: '',
+    refund: 0,
+    account: null
   },
 
-  onLoad() {
-    const store = wx.getStorageSync('skins') || {}
-    const tickets = calc.ticketsLeftOf(calc.getTotal(), store.totalDraws || 0)
-    if (tickets <= 0) {
-      wx.showToast({ title: '没有可开的盒，先去戒一根', icon: 'none' })
+  onLoad(options = {}) {
+    const kind = options.kind === 'pack' ? 'pack' : 'single'
+    const account = rewards.getAccount()
+    const availability = rewards.drawAvailability(account)
+    const allowed = kind === 'pack' ? availability.canPack : availability.canSingle
+    this.setData({
+      kind,
+      kindName: kind === 'pack' ? '稀有保底' : '烟盒单抽',
+      costText: kind === 'pack'
+        ? '消耗 1 次保底资格'
+        : (account.freeDraws > 0 ? '本次免费' : '消耗烟标碎片 ×5'),
+      account
+    })
+    if (!allowed) {
+      wx.showToast({ title: '当前没有可用抽卡', icon: 'none' })
       setTimeout(() => wx.navigateBack(), 800)
     }
+  },
+
+  onUnload() {
+    clearTimeout(this.revealTimer)
   },
 
   onOpen() {
     if (this.data.phase !== 'ready') return
     this.setData({ phase: 'shaking' })
-    setTimeout(() => this.reveal(), 950)
+    this.revealTimer = setTimeout(() => this.reveal(), 950)
   },
 
   reveal() {
-    // roll + 立即持久化（消耗一张券）
-    const store = wx.getStorageSync('skins') || {}
-    store.owned = store.owned || {}
-    store.totalDraws = (store.totalDraws || 0) + 1
-    const skin = skins.rollSkin()
-    const isNew = !store.owned[skin.id]
-    store.owned[skin.id] = (store.owned[skin.id] || 0) + 1
-    wx.setStorageSync('skins', store)
-
-    const count = store.owned[skin.id]
+    if (this.data.phase !== 'shaking') return
+    const draw = rewards.performDraw(this.data.kind)
+    if (!draw.ok) {
+      this.setData({ phase: 'ready' })
+      wx.showToast({ title: '抽卡资源不足，请返回刷新', icon: 'none' })
+      return
+    }
+    const skin = draw.skin
+    const isNew = !draw.duplicate
+    const count = draw.count
     const line = isNew
       ? skins.pick(skins.FIRST_LINES)
       : skins.renderLine(skins.pick(skins.DUPE_LINES), { name: skin.name, n: count })
@@ -50,7 +69,9 @@ Page({
       resultRarity: skins.RARITY[skin.rarity],
       isNew,
       line,
-      count
+      count,
+      refund: draw.refund,
+      account: draw.account
     })
   },
 

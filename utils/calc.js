@@ -187,6 +187,7 @@ function initStorage() {
 function clearAll() {
   ;['profile', 'days', 'total', 'skins', 'rewards', 'logs', 'totalSmoked', 'completedSessions', 'lastSmokeMode'].forEach(k => wx.removeStorageSync(k))
   initStorage()
+  require('./rewards').initStorage()
 }
 
 module.exports = {

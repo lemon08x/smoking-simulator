@@ -44,6 +44,7 @@ function loadPage(relativePath) {
 
 const calc = require('../utils/calc')
 calc.initStorage()
+require('../utils/rewards').initStorage()
 
 // 首页模式选择和路由
 const index = loadPage('pages/index/index.js')
@@ -67,9 +68,27 @@ rhythm.syncRhythm(Date.now())
 rhythm.stopRhythmVibration()
 ok('节奏页：45 秒后自动完成', rhythm.data.finished === true && rhythm.data.settle && rhythm.data.settle.modeName === '节奏模式')
 ok('节奏页：完成一根只入库一次', calc.getTotal() === 1)
+ok('节奏页：结算同时准备非空奖励', rhythm.data.settle.reward.fragments >= 1)
 rhythm.finish()
 ok('节奏页：重复 finish 不重复入库', calc.getTotal() === 1)
 rhythm.onUnload()
+
+// 收藏页显示奖励账户，并可进入免费单抽
+const box = loadPage('pages/box/box.js')
+box.refresh()
+ok('收藏页：首局后显示碎片和免费抽', box.data.fragments >= 1 && box.data.freeDraws >= 1, { fragments: box.data.fragments, freeDraws: box.data.freeDraws, rewardStore: store.rewards })
+box.onSingleDraw()
+const singleRoute = calls.navigate.pop()
+ok('收藏页：免费单抽路由正确', singleRoute === '/pages/draw/draw?kind=single', singleRoute)
+
+// 单抽消费免费次数并持久化烟盒
+const draw = loadPage('pages/draw/draw.js')
+draw.onLoad({ kind: 'single' })
+draw.setData({ phase: 'shaking' })
+draw.reveal()
+ok('抽卡页：单抽揭晓烟盒', draw.data.phase === 'reveal' && draw.data.result && draw.data.result.id, draw.data)
+ok('抽卡页：免费次数已消费', draw.data.account && draw.data.account.freeDraws === box.data.freeDraws - 1, draw.data.account)
+draw.onUnload()
 
 // 自由模式保持原有按住/松开交互
 const free = loadPage('pages/smoke/smoke.js')

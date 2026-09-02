@@ -3,22 +3,28 @@
   <view class="card summary anim-fade-up">
     <view class="sum-row">
       <view class="sum-item">
-        <text class="sum-v">{{tickets}}</text>
-        <text class="sum-k">可开盒</text>
+        <text class="sum-v">{{fragments}}/5</text>
+        <text class="sum-k">烟标碎片</text>
       </view>
       <view class="sum-item">
-        <text class="sum-v">{{draws}}</text>
-        <text class="sum-k">已开盒</text>
+        <text class="sum-v">{{freeDraws}}</text>
+        <text class="sum-k">免费单抽</text>
       </view>
       <view class="sum-item">
-        <text class="sum-v">{{collected}}/{{total}}</text>
-        <text class="sum-k">收集{{allCollected ? ' · 🏆 全收集' : ''}}</text>
+        <text class="sum-v">{{packDraws}}</text>
+        <text class="sum-k">稀有保底</text>
       </view>
     </view>
-    <view class="rule">每戒满一包（20 根）得 1 次开盒机会</view>
-    <button class="btn-gold draw-btn" bindtap="onDraw">
-      🎁 开一包{{tickets > 0 ? ' ×' + tickets : ''}}
-    </button>
+    <view class="rule">5 个碎片抽一次 · 每完成 20 根获得稀有保底</view>
+    <view class="draw-actions">
+      <button class="btn-gold draw-btn {{canSingle ? '' : 'draw-disabled'}}" bindtap="onSingleDraw">
+        {{freeDraws > 0 ? '免费抽一次 ×' + freeDraws : '碎片单抽 · 5'}}
+      </button>
+      <button class="btn-gold draw-btn draw-pack {{packDraws > 0 ? '' : 'draw-disabled'}}" bindtap="onPackDraw">
+        稀有保底{{packDraws > 0 ? ' ×' + packDraws : ''}}
+      </button>
+    </view>
+    <view class="collection-count">已开 {{draws}} 次 · 收集 {{collected}}/{{total}}{{allCollected ? ' · 🏆 全收集' : ''}}</view>
   </view>
 
   <!-- 烟盒九宫格 -->

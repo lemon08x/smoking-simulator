@@ -34,11 +34,30 @@
   font-size: 22rpx;
   color: #8a8f99;
 }
-.draw-btn {
+.draw-actions {
   margin-top: 24rpx;
+  display: flex;
+  gap: 16rpx;
+}
+.draw-btn {
+  flex: 1;
   height: 84rpx;
   line-height: 84rpx;
-  font-size: 30rpx;
+  padding: 0 12rpx;
+  font-size: 25rpx;
+}
+.draw-pack {
+  color: #e7e2ff;
+  background: linear-gradient(135deg, #6058a8, #342d72);
+}
+.draw-disabled {
+  opacity: 0.4;
+}
+.collection-count {
+  margin-top: 20rpx;
+  text-align: center;
+  color: #737984;
+  font-size: 21rpx;
 }
 
 /* 九宫格 */

@@ -2,6 +2,7 @@
 const calc = require('../../utils/calc')
 const skins = require('../../utils/skins')
 const session = require('../../utils/session')
+const rewards = require('../../utils/rewards')
 
 Page({
   data: {
@@ -12,7 +13,10 @@ Page({
     streak: 0,
     skin: null,
     rarityName: '',
-    tickets: 0,
+    fragments: 0,
+    freeDraws: 0,
+    packDraws: 0,
+    canDraw: false,
     ms: { title: '', desc: '', pct: 0 },
     showModePicker: false,
     lastMode: session.MODE_FREE
@@ -29,7 +33,8 @@ Page({
     const today = days[calc.todayStr()] || 0
     const skinStore = wx.getStorageSync('skins') || {}
     const skin = skins.getSkin(skinStore.currentId)
-    const tickets = calc.ticketsLeftOf(total, skinStore.totalDraws || 0)
+    const account = rewards.getAccount()
+    const availability = rewards.drawAvailability(account)
     this.setData({
       today,
       total,
@@ -38,7 +43,10 @@ Page({
       streak: calc.streakOf(days),
       skin,
       rarityName: skins.RARITY[skin.rarity].name,
-      tickets,
+      fragments: account.fragments,
+      freeDraws: account.freeDraws,
+      packDraws: account.packDraws,
+      canDraw: availability.canSingle || availability.canPack,
       ms: calc.nextMilestone(profile.quitStartAt || Date.now()),
       lastMode: session.normalizeMode(wx.getStorageSync('lastSmokeMode'))
     })
