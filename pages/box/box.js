@@ -1,11 +1,15 @@
 // 烟盒收藏：换肤 + 开盒入口
 const calc = require('../../utils/calc')
 const skins = require('../../utils/skins')
+const rewards = require('../../utils/rewards')
 
 Page({
   data: {
     list: [], // { skin, owned, count, isCurrent, rarityName }
-    tickets: 0,
+    fragments: 0,
+    freeDraws: 0,
+    packDraws: 0,
+    canSingle: false,
     draws: 0,
     collected: 0,
     total: skins.SKINS.length,
@@ -21,7 +25,9 @@ Page({
     const store = wx.getStorageSync('skins') || {}
     const owned = store.owned || {}
     const total = calc.getTotal()
-    const draws = store.totalDraws || 0
+    const account = rewards.getAccount()
+    const availability = rewards.drawAvailability(account)
+    const draws = account.totalDraws
     const list = skins.SKINS.map(s => ({
       skin: s,
       rarityName: skins.RARITY[s.rarity].name,
@@ -32,11 +38,16 @@ Page({
     const collected = list.filter(x => x.owned).length
     this.setData({
       list,
-      tickets: calc.ticketsLeftOf(total, draws),
+      fragments: account.fragments,
+      freeDraws: account.freeDraws,
+      packDraws: account.packDraws,
+      canSingle: availability.canSingle,
       draws,
       collected,
       allCollected: collected === skins.SKINS.length,
-      cigsToNext: calc.cigsToNextTicket(total, draws)
+      cigsToNext: account.packDraws > 0
+        ? 0
+        : calc.CIGS_PER_PACK - (account.rewardedCompletions % calc.CIGS_PER_PACK)
     })
   },
 
@@ -54,11 +65,19 @@ Page({
     this.refresh()
   },
 
-  onDraw() {
-    if (this.data.tickets <= 0) {
-      wx.showToast({ title: '还差 ' + this.data.cigsToNext + ' 根凑满一包', icon: 'none' })
+  onSingleDraw() {
+    if (!this.data.canSingle) {
+      wx.showToast({ title: '还差 ' + Math.max(0, rewards.FRAGMENTS_PER_DRAW - this.data.fragments) + ' 个碎片', icon: 'none' })
       return
     }
-    wx.navigateTo({ url: '/pages/draw/draw' })
+    wx.navigateTo({ url: '/pages/draw/draw?kind=single' })
+  },
+
+  onPackDraw() {
+    if (this.data.packDraws <= 0) {
+      wx.showToast({ title: '还差 ' + this.data.cigsToNext + ' 根获得保底', icon: 'none' })
+      return
+    }
+    wx.navigateTo({ url: '/pages/draw/draw?kind=pack' })
   }
 })

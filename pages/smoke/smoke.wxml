@@ -20,37 +20,66 @@
   <!-- 自定义返回 -->
   <view class="nav-back" bindtap="onBack">‹</view>
 
+  <view class="mode-pill">{{modeName}}</view>
+
   <!-- 操作提示 -->
-  <view wx:if="{{showHint}}" class="hint anim-fade-up">按住吸入 · 松开吐烟</view>
-  <view wx:if="{{puffs > 0 && !finished}}" class="puff-count">第 {{puffs}} 口</view>
+  <view wx:if="{{mode === 'free' && showHint}}" class="hint anim-fade-up">按住吸入 · 松开吐烟</view>
+  <view wx:if="{{mode === 'free' && puffs > 0 && !finished}}" class="puff-count">第 {{puffs}} 口</view>
+
+  <view wx:if="{{mode === 'rhythm' && !finished}}" class="rhythm-guide rhythm-{{rhythmPhase}}">
+    <view class="rhythm-orb"></view>
+    <view class="rhythm-action">{{rhythmPhase === 'inhale' ? '按住 · 吸入' : '松开 · 吐出'}}</view>
+    <view class="rhythm-sub">第 {{rhythmCycle}}/6 轮 · 还剩 {{remainingSeconds}} 秒</view>
+    <view wx:if="{{rhythmFeedback}}" class="rhythm-feedback feedback-{{rhythmFeedbackTone}}">{{rhythmFeedback}}</view>
+    <view class="rhythm-progress"><view class="rhythm-progress-fill" style="width: {{(45 - remainingSeconds) / 45 * 100}}%"></view></view>
+  </view>
 
   <!-- 结算卡 -->
   <view wx:if="{{showSettle}}" class="settle-mask">
     <view class="settle-card anim-pop">
-      <view class="s-badge">第 {{settle.total}} 根 · 戒掉了</view>
+      <view class="s-badge">第 {{settle.total}} 根 · 完成</view>
       <view class="s-line">「{{settle.line}}」</view>
       <view class="s-rows">
         <view class="s-row">
-          <text class="s-k">这根省下</text>
-          <text class="s-v">{{settle.moneyText}}</text>
+          <text class="s-k">玩法</text>
+          <text class="s-v">{{settle.modeName}}</text>
         </view>
         <view class="s-row">
-          <text class="s-k">寿命 +</text>
-          <text class="s-v">11 分钟</text>
+          <text class="s-k">用时</text>
+          <text class="s-v">{{settle.durationText}}</text>
+        </view>
+        <view class="s-row">
+          <text class="s-k">{{settle.mode === 'rhythm' ? '成绩' : '节奏'}}</text>
+          <text wx:if="{{settle.mode === 'rhythm'}}" class="s-v grade-{{settle.grade.key}}">{{settle.grade.name}}</text>
+          <text wx:else class="s-v">{{settle.puffs}} 口</text>
         </view>
       </view>
       <view class="s-pack">
         <view class="s-pack-head">
-          <text>本包进度 {{settle.inPack}}/20</text>
+          <text>奖励进度 {{settle.inPack}}/20</text>
           <text wx:if="{{settle.ticketEarned}}" class="s-ticket">🎁 凑满一包！</text>
         </view>
         <view class="s-pack-bar">
           <view class="s-pack-fill" style="width: {{settle.inPack * 5}}%"></view>
         </view>
       </view>
-      <view class="s-btns">
-        <button wx:if="{{settle.ticketEarned}}" class="btn-gold s-btn" bindtap="goBox">开盒</button>
-        <button class="btn-gold s-btn {{settle.ticketEarned ? 's-btn-ghost' : ''}}" bindtap="onAgain">再戒一根</button>
+
+      <view wx:if="{{rewardPhase !== 'revealed'}}" class="reward-card reward-{{rewardPhase}}" bindtap="onRevealReward">
+        <view class="reward-back">{{rewardPhase === 'flipping' ? '正在翻开…' : '翻开本局奖励'}}</view>
+      </view>
+      <view wx:else class="reward-card reward-front anim-flip">
+        <view class="reward-kicker">本局奖励</view>
+        <view class="reward-main {{settle.reward.fragments === 0 ? 'reward-empty' : ''}}">
+          {{settle.reward.fragments > 0 ? '烟标碎片 ×' + settle.reward.fragments : '本局没有获得碎片'}}
+        </view>
+        <view wx:if="{{settle.rewardTags.length}}" class="reward-tags">
+          <text wx:for="{{settle.rewardTags}}" wx:key="*this" class="reward-tag">{{item}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{rewardPhase === 'revealed'}}" class="s-btns anim-fade-up">
+        <button wx:if="{{settle.canDraw}}" class="btn-gold s-btn" bindtap="goBox">去抽烟盒</button>
+        <button class="btn-gold s-btn {{settle.canDraw ? 's-btn-ghost' : ''}}" bindtap="onAgain">再来一根</button>
         <button class="btn-ghost s-btn" bindtap="goHome">回首页</button>
       </view>
     </view>

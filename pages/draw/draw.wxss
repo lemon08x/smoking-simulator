@@ -60,10 +60,22 @@
 }
 
 .tip {
-  margin-top: 48rpx;
+  margin-top: 16rpx;
   color: #8a8f99;
   font-size: 26rpx;
   letter-spacing: 4rpx;
+}
+.draw-kind {
+  margin-top: 42rpx;
+  color: #e8cf9a;
+  font-size: 32rpx;
+  font-weight: 700;
+  letter-spacing: 3rpx;
+}
+.cost-tip {
+  margin-top: 12rpx;
+  color: #626873;
+  font-size: 21rpx;
 }
 
 /* 揭晓 */
@@ -130,6 +142,14 @@
 .result-count {
   margin-top: 12rpx;
   color: #8a8f99;
+  font-size: 22rpx;
+}
+.refund {
+  margin-top: 18rpx;
+  padding: 8rpx 18rpx;
+  border-radius: 22rpx;
+  color: #e8cf9a;
+  background: rgba(200, 160, 99, 0.12);
   font-size: 22rpx;
 }
 

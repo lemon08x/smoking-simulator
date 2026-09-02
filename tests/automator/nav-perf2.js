@@ -35,7 +35,7 @@ async function main() {
       wx.navigateBack({ success: () => resolve(Date.now() - t0), fail: () => resolve(-1) })
     })
   )
-  console.log('  navigateTo smoke:', (await nav('/pages/smoke/smoke')) + 'ms')
+  console.log('  navigateTo smoke:', (await nav('/pages/smoke/smoke?mode=free')) + 'ms')
   await sleep(800)
   console.log('  navigateBack:', (await back()) + 'ms')
 
