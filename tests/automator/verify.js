@@ -1,162 +1,155 @@
-// 「戒一根」自动化验证：连接微信开发者工具模拟器，逐页截图 + 核心交互 + 错误收集
+// 双模式 + 短奖励全链路：连接微信开发者工具自动化端口 9420
 const automator = require('miniprogram-automator')
 const path = require('path')
 
 const SHOT_DIR = __dirname
-const sleep = ms => new Promise(r => setTimeout(r, ms))
-const shots = []
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 const consoleErrors = []
 let failed = 0
 
-function ok(name, cond, extra) {
-  const mark = cond ? 'PASS' : 'FAIL'
-  if (!cond) failed++
-  console.log(`[${mark}] ${name}${extra !== undefined ? ' :: ' + JSON.stringify(extra) : ''}`)
+function ok(name, condition, extra) {
+  const mark = condition ? 'PASS' : 'FAIL'
+  if (!condition) failed++
+  console.log(`[${mark}] ${name}${extra === undefined ? '' : ' :: ' + JSON.stringify(extra)}`)
 }
 
 async function shot(mp, name) {
-  const file = path.join(SHOT_DIR, name + '.png')
-  await mp.screenshot({ path: file })
-  shots.push(file)
-  console.log('[shot]', name + '.png')
+  await mp.screenshot({ path: path.join(SHOT_DIR, name + '.png') })
+}
+
+async function reset(mp) {
+  await mp.evaluate(() => {
+    wx.clearStorageSync()
+    wx.setStorageSync('profile', { pricePerPack: 20, cigsPerDay: 20, quitStartAt: Date.now() })
+    wx.setStorageSync('days', {})
+    wx.setStorageSync('total', 0)
+    wx.setStorageSync('skins', { owned: { redgold: 1 }, currentId: 'redgold', totalDraws: 0 })
+    wx.setStorageSync('rewards', {
+      version: 1,
+      fragments: 0,
+      freeDraws: 0,
+      packDraws: 0,
+      totalDraws: 0,
+      firstCompletionGranted: false,
+      claims: []
+    })
+  })
 }
 
 async function main() {
   const mp = await automator.connect({ wsEndpoint: 'ws://localhost:9420' })
-  console.log('connected')
-
-  mp.on('console', msg => {
-    if (msg.type === 'error') consoleErrors.push(msg.args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' '))
+  mp.on('console', message => {
+    if (message.type === 'error') consoleErrors.push(message.args.map(String).join(' '))
   })
-  mp.on('exception', err => consoleErrors.push('EXCEPTION: ' + (err && (err.message || err.errorMessage || JSON.stringify(err)))))
+  mp.on('exception', error => consoleErrors.push('EXCEPTION: ' + (error && (error.message || error.errorMessage || error))))
+  await reset(mp)
 
-  // ---------- 重置数据 ----------
-  await mp.evaluate(() => {
-    wx.clearStorageSync()
-  })
-  await mp.evaluate(() => {
-    // 触发 app onLaunch 不可行，手动初始化等价数据
-    wx.setStorageSync('profile', { pricePerPack: 20, cigsPerDay: 20, quitStartAt: Date.now() })
-    wx.setStorageSync('days', {})
-    wx.setStorageSync('total', 0)
-    wx.setStorageSync('skins', { owned: { redgold: 1 }, currentId: 'redgold', totalDraws: 0 })
-  })
-
-  // ---------- 首页 ----------
   let page = await mp.reLaunch('/pages/index/index')
-  await sleep(1200)
-  ok('首页路径', page.path === 'pages/index/index', page.path)
-  let d = await page.data()
-  ok('首页初始数据', d.today === 0 && d.total === 0 && d.skin && d.skin.id === 'redgold', { today: d.today, skin: d.skin && d.skin.id })
-  ok('首页里程碑', d.ms && d.ms.pct === 0, d.ms)
-  await shot(mp, '01-index')
+  await sleep(900)
+  let data = await page.data()
+  ok('首页初始资源', data.total === 0 && data.fragments === 0 && data.freeDraws === 0 && data.packDraws === 0, data)
+  await page.callMethod('onSmoke')
+  data = await page.data()
+  ok('首页打开模式选择', data.showModePicker === true)
+  await shot(mp, '01-mode-picker')
 
-  // ---------- 抽烟页：按住/松开 + 烧完结算 ----------
-  page = await mp.reLaunch('/pages/smoke/smoke')
-  await sleep(1500)
-  d = await page.data()
-  ok('抽烟页进入', page.path === 'pages/smoke/smoke' && d.showHint === true && d.finished === false)
-
+  page = await mp.reLaunch('/pages/smoke/smoke?mode=free')
+  await sleep(1300)
+  data = await page.data()
+  ok('自由模式进入', data.mode === 'free' && data.showHint === true)
   await page.callMethod('onTouchStart')
-  await sleep(2200)
+  await sleep(800)
   await page.callMethod('onTouchEnd')
-  await sleep(400)
-  d = await page.data()
-  ok('吸入松开计一口', d.puffs === 1 && d.showHint === false, { puffs: d.puffs })
-  await shot(mp, '02-smoke-holding')
-
-  // 快进：直接烧完
-  await page.callMethod('onTouchStart')
-  await sleep(300)
-  await page.callMethod('onTouchEnd')
-  // 手动把 burn 拉满再 finish（绕过 12 秒等待）
   await page.callMethod('finish')
-  await sleep(1300)
-  d = await page.data()
-  ok('结算卡出现', d.showSettle === true && d.finished === true)
-  ok('结算数据', d.settle && d.settle.total === 1 && d.settle.moneyText === '¥1' && d.settle.inPack === 1, d.settle)
-  await shot(mp, '03-smoke-settle')
-
-  const stored = await mp.evaluate(() => ({
-    total: wx.getStorageSync('total'),
-    days: wx.getStorageSync('days')
-  }))
-  ok('结算入库', stored.total === 1 && stored.days && stored.days[Object.keys(stored.days)[0]] === 1, stored)
-  await page.callMethod('onAgain')
-  d = await page.data()
-  ok('再戒一根重置', d.showSettle === false && d.puffs === 0)
-
-  // ---------- 抽奖：凑满一包 ----------
-  await mp.evaluate(() => {
-    wx.setStorageSync('total', 20) // 直接凑满一包
-  })
-  page = await mp.reLaunch('/pages/draw/draw')
+  await sleep(1100)
+  data = await page.data()
+  ok('自由模式统一结算', data.showSettle && data.settle.modeName === '自由模式' && data.settle.reward.fragments >= 1, data.settle)
+  await page.callMethod('onRevealReward')
   await sleep(1000)
-  d = await page.data()
-  ok('抽奖页进入', page.path === 'pages/draw/draw' && d.phase === 'ready')
-  await page.callMethod('onOpen')
-  await sleep(1300)
-  d = await page.data()
-  ok('开盒揭晓', d.phase === 'reveal' && d.result && !!d.result.id, { result: d.result && d.result.id, isNew: d.isNew, line: d.line })
-  await shot(mp, '04-draw-reveal')
-  const drawnId = d.result.id
-  const skinsStored = await mp.evaluate(() => wx.getStorageSync('skins'))
-  ok('抽奖入库+券消耗', skinsStored.totalDraws === 1 && Object.keys(skinsStored.owned).length === 2, skinsStored)
-  await page.callMethod('onOk')
-  await sleep(600)
-  const afterOk = await mp.evaluate(() => wx.getStorageSync('skins'))
-  ok('收下即换上', afterOk.currentId === drawnId, afterOk.currentId)
+  data = await page.data()
+  ok('本局奖励翻开', data.rewardPhase === 'revealed')
+  await shot(mp, '02-free-reward')
 
-  // ---------- 烟盒收藏 ----------
+  let stored = await mp.evaluate(() => ({ total: wx.getStorageSync('total'), rewards: wx.getStorageSync('rewards') }))
+  ok('首局奖励入库', stored.total === 1 && stored.rewards.fragments >= 1 && stored.rewards.freeDraws >= 1, stored)
+
   page = await mp.reLaunch('/pages/box/box')
-  await sleep(1000)
-  d = await page.data()
-  ok('收藏页统计', d.collected === 2 && d.tickets === 0 && d.draws === 1, { collected: d.collected, tickets: d.tickets, draws: d.draws })
-  ok('当前皮肤高亮', d.list.some(x => x.isCurrent && x.skin.id === drawnId), d.list.filter(x => x.isCurrent).map(x => x.skin.id))
-  await shot(mp, '05-box')
+  await sleep(800)
+  data = await page.data()
+  ok('收藏页显示奖励账户', data.canSingle && data.fragments >= 1 && data.freeDraws >= 1, data)
+  const freeBefore = data.freeDraws
+  await shot(mp, '03-box-wallet')
 
-  // ---------- 统计页（total 此前被覆写为 20）----------
+  page = await mp.reLaunch('/pages/draw/draw?kind=single')
+  await sleep(700)
+  await page.callMethod('onOpen')
+  await sleep(1200)
+  data = await page.data()
+  ok('免费单抽揭晓', data.phase === 'reveal' && data.result && data.result.id, data)
+  ok('免费次数消费一次', data.account.freeDraws === freeBefore - 1, data.account)
+  const singleId = data.result.id
+  await shot(mp, '04-single-draw')
+  await page.callMethod('onOk')
+  await sleep(400)
+  stored = await mp.evaluate(() => wx.getStorageSync('skins'))
+  ok('抽到烟盒后自动换肤', stored.currentId === singleId, stored)
+
+  page = await mp.reLaunch('/pages/smoke/smoke?mode=rhythm')
+  await sleep(1400)
+  data = await page.data()
+  ok('节奏模式启动', data.mode === 'rhythm' && data.rhythmPhase && data.remainingSeconds <= 45, data)
+  await shot(mp, '05-rhythm')
+  await page.callMethod('finish')
+  await sleep(1100)
+  data = await page.data()
+  ok('节奏模式进入同一结算', data.showSettle && data.settle.modeName === '节奏模式' && data.settle.reward.fragments >= 1, data.settle)
+
+  await mp.evaluate(() => {
+    const account = wx.getStorageSync('rewards')
+    account.packDraws = 1
+    wx.setStorageSync('rewards', account)
+  })
+  page = await mp.reLaunch('/pages/draw/draw?kind=pack')
+  await sleep(700)
+  await page.callMethod('onOpen')
+  await sleep(1200)
+  data = await page.data()
+  ok('整包保底不出普通', data.phase === 'reveal' && data.result && data.result.rarity !== 'common', data.result)
+  await shot(mp, '06-pack-draw')
+
+  page = await mp.reLaunch('/pages/box/box')
+  await sleep(700)
+  data = await page.data()
+  ok('收藏与抽数同步', data.draws === 2 && data.collected >= 2, { draws: data.draws, collected: data.collected })
+
   page = await mp.reLaunch('/pages/stats/stats')
-  await sleep(1000)
-  d = await page.data()
-  ok('统计页数据', d.total === 20 && d.streak === 1 && d.cells.length === 30 && d.milestones.length === 8, { total: d.total, streak: d.streak })
-  await shot(mp, '06-stats')
+  await sleep(700)
+  data = await page.data()
+  ok('两种模式累计统计', data.total === 2 && data.streak === 1 && data.cells.length === 30, data)
 
-  // ---------- 设置页 ----------
   page = await mp.reLaunch('/pages/settings/settings')
-  await sleep(1000)
-  d = await page.data()
-  ok('设置页档案', d.profile && d.profile.pricePerPack === 20 && !!d.quitDateStr, { price: d.profile && d.profile.pricePerPack, quit: d.quitDateStr })
-  await shot(mp, '07-settings')
+  await sleep(700)
+  data = await page.data()
+  ok('设置页正常', data.profile && data.profile.pricePerPack === 20)
 
-  // ---------- 回首页看联动 ----------
-  await mp.evaluate(() => wx.setStorageSync('days', { [Object.keys(wx.getStorageSync('days'))[0]]: 3 }))
   page = await mp.reLaunch('/pages/index/index')
-  await sleep(1000)
-  d = await page.data()
-  ok('首页联动新皮肤', d.skin.id === afterOk.currentId, d.skin.id)
-  await shot(mp, '08-index-after')
+  await sleep(700)
+  data = await page.data()
+  ok('首页联动奖励与皮肤', data.total === 2 && data.skin && data.skin.id === singleId && data.fragments >= 2, data)
+  await shot(mp, '07-index-after')
 
-  // ---------- 汇总 ----------
   console.log('\nconsole errors:', consoleErrors.length)
-  consoleErrors.slice(0, 10).forEach(e => console.log('  ERR:', e.slice(0, 300)))
+  consoleErrors.slice(0, 10).forEach(error => console.log('  ERR:', error.slice(0, 300)))
   console.log('failed:', failed)
 
-  // ---------- 清场：数据复位 + 回首页 ----------
-  await mp.evaluate(() => {
-    wx.setStorageSync('profile', { pricePerPack: 20, cigsPerDay: 20, quitStartAt: Date.now() })
-    wx.setStorageSync('days', {})
-    wx.setStorageSync('total', 0)
-    wx.setStorageSync('skins', { owned: { redgold: 1 }, currentId: 'redgold', totalDraws: 0 })
-  })
+  await reset(mp)
   await mp.reLaunch('/pages/index/index')
-  await sleep(500)
-
+  await sleep(300)
   await mp.disconnect()
   process.exit(failed || consoleErrors.length ? 1 : 0)
 }
 
-main().catch(e => {
-  console.error('SCRIPT ERROR:', e)
+main().catch(error => {
+  console.error('SCRIPT ERROR:', error)
   process.exit(2)
 })

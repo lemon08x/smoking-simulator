@@ -10,6 +10,7 @@ automator.connect({ wsEndpoint: 'ws://localhost:9420' }).then(async mp => {
     wx.setStorageSync('days', {})
     wx.setStorageSync('total', 0)
     wx.setStorageSync('skins', { owned: { redgold: 1 }, currentId: 'redgold', totalDraws: 0 })
+    wx.setStorageSync('rewards', { version: 1, fragments: 0, freeDraws: 0, packDraws: 0, totalDraws: 0, firstCompletionGranted: false, claims: [] })
   })
   await mp.reLaunch('/pages/index/index')
   await new Promise(r => setTimeout(r, 800))

@@ -2,7 +2,7 @@ const automator = require('miniprogram-automator')
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 async function main() {
   const mp = await automator.connect({ wsEndpoint: 'ws://localhost:9420' })
-  const page = await mp.reLaunch('/pages/smoke/smoke')
+  const page = await mp.reLaunch('/pages/smoke/smoke?mode=free')
   await sleep(1500)
   await mp.screenshot({ path: 'burn-0.png' })          // 初始：满烟
   await page.callMethod('onTouchStart')

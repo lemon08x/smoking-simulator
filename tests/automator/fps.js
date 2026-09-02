@@ -3,7 +3,7 @@ const automator = require('miniprogram-automator')
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 async function main() {
   const mp = await automator.connect({ wsEndpoint: 'ws://localhost:9420' })
-  const page = await mp.reLaunch('/pages/smoke/smoke')
+  const page = await mp.reLaunch('/pages/smoke/smoke?mode=free')
   await sleep(1500)
   // 重置探针起点：读两次取差值不可行，直接分段测——用两段全量平均近似
   await sleep(5000)
