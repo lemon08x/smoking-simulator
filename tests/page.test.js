@@ -64,14 +64,40 @@ rhythm.stopLoop = () => {}
 rhythm.rhythmStartedAt = Date.now() - 45000
 rhythm.sessionStartedAt = rhythm.rhythmStartedAt
 rhythm.started = true
+rhythm.rhythmAttempts = Array.from({ length: 6 }, () => ({ pressDeltaMs: 200, releaseDeltaMs: 250 }))
 rhythm.syncRhythm(Date.now())
 rhythm.stopRhythmVibration()
 ok('节奏页：45 秒后自动完成', rhythm.data.finished === true && rhythm.data.settle && rhythm.data.settle.modeName === '节奏模式')
 ok('节奏页：完成一根只入库一次', calc.getTotal() === 1)
-ok('节奏页：结算同时准备非空奖励', rhythm.data.settle.reward.fragments >= 1)
+ok('节奏页：PERFECT 结算获得四倍奖励', rhythm.data.settle.grade.key === 'perfect' && rhythm.data.settle.reward.fragments === 4)
 rhythm.finish()
 ok('节奏页：重复 finish 不重复入库', calc.getTotal() === 1)
 rhythm.onUnload()
+
+const rhythmInput = loadPage('pages/smoke/smoke.js')
+rhythmInput.onLoad({ mode: 'rhythm' })
+rhythmInput.spawnExhale = () => {}
+rhythmInput.stopLoop = () => {}
+rhythmInput.startRhythm()
+rhythmInput.onTouchStart()
+rhythmInput.rhythmStartedAt -= 3000
+rhythmInput.onTouchEnd()
+ok('节奏页：按吸入提示按住并在吐出点松开得到 PERFECT', rhythmInput.data.rhythmFeedback === 'PERFECT' && rhythmInput.rhythmAttempts.length === 1)
+rhythmInput.onUnload()
+
+const rewards = require('../utils/rewards')
+const progressBeforeBad = rewards.getAccount().rewardedCompletions
+const rhythmBad = loadPage('pages/smoke/smoke.js')
+rhythmBad.onLoad({ mode: 'rhythm' })
+rhythmBad.spawnAshFall = () => {}
+rhythmBad.stopLoop = () => {}
+rhythmBad.rhythmStartedAt = Date.now() - 45000
+rhythmBad.sessionStartedAt = rhythmBad.rhythmStartedAt
+rhythmBad.started = true
+rhythmBad.syncRhythm(Date.now())
+ok('节奏页：无操作得到 BAD 且不发奖励', rhythmBad.data.settle.grade.key === 'bad' && rhythmBad.data.settle.reward.fragments === 0)
+ok('节奏页：BAD 不推进有效完成进度', rewards.getAccount().rewardedCompletions === progressBeforeBad)
+rhythmBad.onUnload()
 
 const rhythmLifecycle = loadPage('pages/smoke/smoke.js')
 rhythmLifecycle.onLoad({ mode: 'rhythm' })

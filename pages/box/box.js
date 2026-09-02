@@ -45,7 +45,9 @@ Page({
       draws,
       collected,
       allCollected: collected === skins.SKINS.length,
-      cigsToNext: account.packDraws > 0 ? 0 : calc.CIGS_PER_PACK - (total % calc.CIGS_PER_PACK)
+      cigsToNext: account.packDraws > 0
+        ? 0
+        : calc.CIGS_PER_PACK - (account.rewardedCompletions % calc.CIGS_PER_PACK)
     })
   },
 

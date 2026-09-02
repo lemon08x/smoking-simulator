@@ -166,6 +166,17 @@
   color: rgba(255, 255, 255, 0.55);
   font-size: 22rpx;
 }
+.rhythm-feedback {
+  min-height: 32rpx;
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+}
+.feedback-active { color: #f0d7a4; }
+.feedback-perfect { color: #ffd86b; text-shadow: 0 0 18rpx rgba(255, 216, 107, 0.5); }
+.feedback-good { color: #8fd8b0; }
+.feedback-bad { color: #c77777; }
 .rhythm-progress {
   width: 100%;
   height: 7rpx;
@@ -238,6 +249,10 @@
   font-weight: 700;
   color: #8fd8b0;
 }
+.grade-perfect { color: #ffd86b; }
+.grade-great { color: #a9a4ff; }
+.grade-good { color: #8fd8b0; }
+.grade-bad { color: #c77777; }
 .s-pack {
   margin-top: 26rpx;
   width: 100%;
@@ -321,6 +336,10 @@
   color: #f0d7a4;
   font-size: 34rpx;
   font-weight: 700;
+}
+.reward-empty {
+  color: #8a8f99;
+  font-size: 27rpx;
 }
 .reward-tags {
   margin-top: 12rpx;

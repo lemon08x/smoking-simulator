@@ -28,8 +28,9 @@
 
   <view wx:if="{{mode === 'rhythm' && !finished}}" class="rhythm-guide rhythm-{{rhythmPhase}}">
     <view class="rhythm-orb"></view>
-    <view class="rhythm-action">{{rhythmText}}</view>
+    <view class="rhythm-action">{{rhythmPhase === 'inhale' ? '按住 · 吸入' : '松开 · 吐出'}}</view>
     <view class="rhythm-sub">第 {{rhythmCycle}}/6 轮 · 还剩 {{remainingSeconds}} 秒</view>
+    <view wx:if="{{rhythmFeedback}}" class="rhythm-feedback feedback-{{rhythmFeedbackTone}}">{{rhythmFeedback}}</view>
     <view class="rhythm-progress"><view class="rhythm-progress-fill" style="width: {{(45 - remainingSeconds) / 45 * 100}}%"></view></view>
   </view>
 
@@ -48,13 +49,14 @@
           <text class="s-v">{{settle.durationText}}</text>
         </view>
         <view class="s-row">
-          <text class="s-k">节奏</text>
-          <text class="s-v">{{settle.puffs}} 口</text>
+          <text class="s-k">{{settle.mode === 'rhythm' ? '成绩' : '节奏'}}</text>
+          <text wx:if="{{settle.mode === 'rhythm'}}" class="s-v grade-{{settle.grade.key}}">{{settle.grade.name}}</text>
+          <text wx:else class="s-v">{{settle.puffs}} 口</text>
         </view>
       </view>
       <view class="s-pack">
         <view class="s-pack-head">
-          <text>本包进度 {{settle.inPack}}/20</text>
+          <text>奖励进度 {{settle.inPack}}/20</text>
           <text wx:if="{{settle.ticketEarned}}" class="s-ticket">🎁 凑满一包！</text>
         </view>
         <view class="s-pack-bar">
@@ -67,7 +69,9 @@
       </view>
       <view wx:else class="reward-card reward-front anim-flip">
         <view class="reward-kicker">本局奖励</view>
-        <view class="reward-main">烟标碎片 ×{{settle.reward.fragments}}</view>
+        <view class="reward-main {{settle.reward.fragments === 0 ? 'reward-empty' : ''}}">
+          {{settle.reward.fragments > 0 ? '烟标碎片 ×' + settle.reward.fragments : '本局没有获得碎片'}}
+        </view>
         <view wx:if="{{settle.rewardTags.length}}" class="reward-tags">
           <text wx:for="{{settle.rewardTags}}" wx:key="*this" class="reward-tag">{{item}}</text>
         </view>

@@ -16,6 +16,7 @@ function defaultAccount(total = 0, skinStore = {}) {
     freeDraws: 0,
     packDraws: Math.max(0, Math.floor(total / 20) - (skinStore.totalDraws || 0)),
     totalDraws: skinStore.totalDraws || 0,
+    rewardedCompletions: total,
     firstCompletionGranted: total > 0,
     claims: []
   }
@@ -29,6 +30,7 @@ function normalizeAccount(raw, total = 0, skinStore = {}) {
   account.freeDraws = Math.max(0, Number(account.freeDraws) || 0)
   account.packDraws = Math.max(0, Number(account.packDraws) || 0)
   account.totalDraws = Math.max(0, Number(account.totalDraws) || 0)
+  account.rewardedCompletions = Math.max(0, Number(account.rewardedCompletions) || 0)
   account.firstCompletionGranted = !!account.firstCompletionGranted
   account.claims = Array.isArray(account.claims) ? account.claims.slice(-CLAIM_HISTORY_LIMIT) : []
   return account
@@ -61,26 +63,38 @@ function bonusOf(randomValue = Math.random()) {
   return 'free_draw'
 }
 
-function claimCompletion(sessionId, total, randomValue = Math.random()) {
+function claimCompletion(sessionId, total, randomValue = Math.random(), options = {}) {
   const account = getAccount()
   const previous = account.claims.find(item => item.sessionId === sessionId)
   if (previous) return Object.assign({}, previous.reward, { duplicate: true })
 
-  const bonus = bonusOf(randomValue)
-  const fragments = bonus === 'double' ? 2 : 1
-  let freeDraws = bonus === 'free_draw' ? 1 : 0
+  const fixedMultiplier = Number.isFinite(options.fragmentMultiplier)
+    ? Math.max(0, Math.floor(options.fragmentMultiplier))
+    : null
+  const bonus = fixedMultiplier === null ? bonusOf(randomValue) : 'rhythm_grade'
+  const fragments = fixedMultiplier === null ? (bonus === 'double' ? 2 : 1) : fixedMultiplier
+  let freeDraws = fixedMultiplier === null && bonus === 'free_draw' ? 1 : 0
   let firstFree = false
-  if (!account.firstCompletionGranted) {
+  if (fragments > 0 && !account.firstCompletionGranted) {
     account.firstCompletionGranted = true
     freeDraws++
     firstFree = true
   }
-  const packDraws = total > 0 && total % 20 === 0 ? 1 : 0
+  if (fragments > 0) account.rewardedCompletions++
+  const packDraws = fragments > 0 && account.rewardedCompletions % 20 === 0 ? 1 : 0
 
   account.fragments += fragments
   account.freeDraws += freeDraws
   account.packDraws += packDraws
-  const reward = { fragments, bonus, freeDraws, firstFree, packDraws, duplicate: false }
+  const reward = {
+    fragments,
+    bonus,
+    freeDraws,
+    firstFree,
+    packDraws,
+    grade: options.grade || null,
+    duplicate: false
+  }
   account.claims.push({ sessionId, reward })
   account.claims = account.claims.slice(-CLAIM_HISTORY_LIMIT)
   saveAccount(account)

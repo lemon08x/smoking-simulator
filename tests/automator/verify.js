@@ -30,6 +30,7 @@ async function reset(mp) {
       freeDraws: 0,
       packDraws: 0,
       totalDraws: 0,
+      rewardedCompletions: 0,
       firstCompletionGranted: false,
       claims: []
     })
@@ -102,7 +103,7 @@ async function main() {
   await page.callMethod('finish')
   await sleep(1100)
   data = await page.data()
-  ok('节奏模式进入同一结算', data.showSettle && data.settle.modeName === '节奏模式' && data.settle.reward.fragments >= 1, data.settle)
+  ok('节奏模式无操作评为 BAD 且无碎片', data.showSettle && data.settle.grade.key === 'bad' && data.settle.reward.fragments === 0, data.settle)
 
   await mp.evaluate(() => {
     const account = wx.getStorageSync('rewards')

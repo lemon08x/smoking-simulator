@@ -21,7 +21,9 @@ Page({
     rhythmPhase: 'inhale',
     rhythmText: '吸入',
     remainingSeconds: 45,
-    rhythmCycle: 1
+    rhythmCycle: 1,
+    rhythmFeedback: '',
+    rhythmFeedbackTone: ''
   },
 
   onLoad(options = {}) {
@@ -46,6 +48,8 @@ Page({
     this.wispTimer = 0
     this.hidden = false
     this.destroyed = false
+    this.rhythmAttempts = []
+    this.rhythmPressing = false
   },
 
   onReady() {
@@ -97,6 +101,7 @@ Page({
   onHide() {
     this.hidden = true
     if (this.mode === session.MODE_FREE && this.inhaling) this.onTouchEnd()
+    if (this.mode === session.MODE_RHYTHM && this.rhythmPressing) this.onRhythmTouchEnd()
     this.stopRhythmVibration()
     this.stopLoop()
   },
@@ -130,7 +135,11 @@ Page({
 
   // ---------- 交互 ----------
   onTouchStart() {
-    if (this.mode !== session.MODE_FREE || this.data.finished || this.inhaling) return
+    if (this.mode === session.MODE_RHYTHM) {
+      this.onRhythmTouchStart()
+      return
+    }
+    if (this.data.finished || this.inhaling) return
     this.inhaling = true
     this.puffStart = Date.now()
     if (!this.started) {
@@ -142,11 +151,59 @@ Page({
   },
 
   onTouchEnd() {
-    if (this.mode !== session.MODE_FREE || !this.inhaling) return
+    if (this.mode === session.MODE_RHYTHM) {
+      this.onRhythmTouchEnd()
+      return
+    }
+    if (!this.inhaling) return
     this.inhaling = false
     const dur = (Date.now() - this.puffStart) / 1000
     this.setData({ puffs: this.data.puffs + 1 })
     this.spawnExhale(dur)
+  },
+
+  onRhythmTouchStart() {
+    if (!this.rhythmStartedAt || this.data.finished || this.rhythmPressing) return
+    const now = Date.now()
+    const elapsed = now - this.rhythmStartedAt
+    const state = session.rhythmState(elapsed)
+    if (state.phase !== 'inhale') {
+      this.setData({ rhythmFeedback: '等振动再按', rhythmFeedbackTone: 'bad' })
+      return
+    }
+    const round = state.cycle - 1
+    this.rhythmPressing = true
+    this.activeRhythmRound = round
+    this.rhythmTouchStart = now
+    this.activeRhythmAttempt = {
+      pressDeltaMs: elapsed - round * session.RHYTHM_CYCLE_MS
+    }
+    this.inhaling = true
+    this.setData({ rhythmFeedback: '保持住', rhythmFeedbackTone: 'active' })
+  },
+
+  onRhythmTouchEnd(now = Date.now()) {
+    if (!this.rhythmPressing) return
+    const round = this.activeRhythmRound
+    const elapsed = now - this.rhythmStartedAt
+    const boundary = round * session.RHYTHM_CYCLE_MS + session.RHYTHM_INHALE_MS
+    const attempt = Object.assign({}, this.activeRhythmAttempt, {
+      releaseDeltaMs: elapsed - boundary
+    })
+    const score = session.rhythmRoundScore(attempt)
+    const previous = this.rhythmAttempts[round]
+    if (!previous || score > session.rhythmRoundScore(previous)) this.rhythmAttempts[round] = attempt
+    const feedback = score >= 0.85 ? 'PERFECT' : (score >= 0.5 ? 'GOOD' : 'BAD')
+    this.rhythmPressing = false
+    this.activeRhythmRound = -1
+    this.activeRhythmAttempt = null
+    this.inhaling = false
+    this.setData({
+      puffs: this.data.puffs + 1,
+      rhythmFeedback: feedback,
+      rhythmFeedbackTone: feedback.toLowerCase()
+    })
+    this.spawnExhale(Math.max(0.2, (now - this.rhythmTouchStart) / 1000))
   },
 
   startRhythm() {
@@ -154,6 +211,8 @@ Page({
     this.rhythmStartedAt = Date.now()
     this.sessionStartedAt = this.rhythmStartedAt
     this.lastRhythmPhase = ''
+    this.rhythmAttempts = []
+    this.rhythmPressing = false
     this.syncRhythm(this.rhythmStartedAt)
   },
 
@@ -161,10 +220,10 @@ Page({
     if (!this.rhythmStartedAt || this.data.finished) return
     const state = session.rhythmState(now - this.rhythmStartedAt)
     this.burn = state.progress
-    this.inhaling = state.phase === 'inhale'
 
     const changed = state.phase !== this.lastRhythmPhase
     if (changed) {
+      if (state.phase === 'inhale' && this.rhythmPressing) this.onRhythmTouchEnd(now)
       this.lastRhythmPhase = state.phase
       if (state.phase === 'inhale') this.startRhythmVibration()
       else this.stopRhythmVibration()
@@ -179,11 +238,13 @@ Page({
         rhythmPhase: state.phase,
         rhythmText: state.phase === 'inhale' ? '吸入' : (state.phase === 'exhale' ? '吐出' : '完成'),
         remainingSeconds: state.remainingSeconds,
-        rhythmCycle: state.cycle,
-        puffs: Math.min(6, state.cycle)
+        rhythmCycle: state.cycle
       })
     }
-    if (state.finished) this.finish()
+    if (state.finished) {
+      if (this.rhythmPressing) this.onRhythmTouchEnd(now)
+      this.finish()
+    }
   },
 
   startRhythmVibration() {
@@ -222,6 +283,7 @@ Page({
   finish() {
     if (this.data.finished) return
     this.setData({ finished: true })
+    if (this.mode === session.MODE_RHYTHM && this.rhythmPressing) this.onRhythmTouchEnd()
     this.inhaling = false
     this.stopRhythmVibration()
     this.finishAt = this.t || Date.now() // 烟蒂渐隐的起点
@@ -246,22 +308,34 @@ Page({
     this.added = true
     const result = calc.completeSession(this.sessionId)
     const total = result.total
-    const reward = rewards.claimCompletion(this.sessionId, total)
+    const grade = this.mode === session.MODE_RHYTHM ? session.rhythmGrade(this.rhythmAttempts) : null
+    const reward = grade
+      ? rewards.claimCompletion(this.sessionId, total, Math.random(), { fragmentMultiplier: grade.multiplier, grade: grade.key })
+      : rewards.claimCompletion(this.sessionId, total)
     const account = rewards.getAccount()
     const rewardTags = []
+    if (grade) rewardTags.push(grade.name + ' ×' + grade.multiplier)
     if (reward.bonus === 'double') rewardTags.push('幸运加倍')
     if (reward.firstFree) rewardTags.push('首局免费抽')
     if (reward.freeDraws > (reward.firstFree ? 1 : 0)) rewardTags.push('额外免费抽')
     if (reward.packDraws) rewardTags.push('稀有保底开盒')
-    const inPack = total % calc.CIGS_PER_PACK
+    const inPack = account.rewardedCompletions % calc.CIGS_PER_PACK
+    const gradeLines = {
+      perfect: '六轮呼吸几乎完全合拍。',
+      great: '节奏抓得很稳，再准一点就是 PERFECT。',
+      good: '已经跟上节奏，下一根会更好。',
+      bad: '这局没有跟上节奏，再试一次。'
+    }
     this.setData({
       settle: {
         total,
+        mode: this.mode,
         modeName: this.data.modeName,
         durationText: this.durationText(),
         puffs: this.data.puffs,
-        line: skins.pick(skins.SETTLEMENT_LINES),
-        inPack: inPack === 0 ? calc.CIGS_PER_PACK : inPack,
+        grade,
+        line: grade ? gradeLines[grade.key] : skins.pick(skins.SETTLEMENT_LINES),
+        inPack: inPack === 0 && account.rewardedCompletions > 0 ? calc.CIGS_PER_PACK : inPack,
         ticketEarned: reward.packDraws > 0,
         reward,
         rewardTags,
@@ -304,6 +378,8 @@ Page({
     this.rhythmStartedAt = 0
     this.sessionStartedAt = 0
     this.lastRhythmPhase = ''
+    this.rhythmAttempts = []
+    this.rhythmPressing = false
     this.setData({
       showSettle: false,
       finished: false,
@@ -314,7 +390,9 @@ Page({
       rhythmPhase: 'inhale',
       rhythmText: '吸入',
       remainingSeconds: 45,
-      rhythmCycle: 1
+      rhythmCycle: 1,
+      rhythmFeedback: '',
+      rhythmFeedbackTone: ''
     })
     if (this.mode === session.MODE_RHYTHM) this.startRhythm()
     this.startLoop()

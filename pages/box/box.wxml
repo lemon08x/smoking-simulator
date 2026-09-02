@@ -15,7 +15,7 @@
         <text class="sum-k">稀有保底</text>
       </view>
     </view>
-    <view class="rule">5 个碎片抽一次 · 每完成 20 根获得稀有保底</view>
+    <view class="rule">5 个碎片抽一次 · 每 20 次有效完成获得稀有保底</view>
     <view class="draw-actions">
       <button class="btn-gold draw-btn {{canSingle ? '' : 'draw-disabled'}}" bindtap="onSingleDraw">
         {{freeDraws > 0 ? '免费抽一次 ×' + freeDraws : '碎片单抽 · 5'}}

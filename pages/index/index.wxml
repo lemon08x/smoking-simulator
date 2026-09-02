@@ -75,7 +75,7 @@
         <view class="mode-icon">〰️</view>
         <view class="mode-copy">
           <text class="mode-name">45 秒节奏</text>
-          <text class="mode-desc">跟随振动 · 自然呼吸</text>
+          <text class="mode-desc">按住松开 · 成绩决定奖励</text>
         </view>
         <text class="mode-arrow">›</text>
       </button>

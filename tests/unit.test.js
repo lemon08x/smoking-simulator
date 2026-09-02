@@ -114,6 +114,14 @@ rhythm = session.rhythmState(45000)
 ok('节奏：45 秒完成且进度封顶', rhythm.finished && rhythm.phase === 'done' && rhythm.progress === 1 && rhythm.remainingSeconds === 0)
 rhythm = session.rhythmState(90000)
 ok('节奏：跳帧后仍正确封顶', rhythm.finished && rhythm.elapsedMs === 45000 && rhythm.progress === 1)
+const perfectAttempts = Array.from({ length: 6 }, () => ({ pressDeltaMs: 200, releaseDeltaMs: 250 }))
+const greatAttempts = Array.from({ length: 4 }, () => ({ pressDeltaMs: 400, releaseDeltaMs: 400 }))
+const goodAttempts = Array.from({ length: 3 }, () => ({ pressDeltaMs: 400, releaseDeltaMs: 400 }))
+ok('节奏评分：六轮准确为 PERFECT ×4', session.rhythmGrade(perfectAttempts).multiplier === 4)
+ok('节奏评分：四轮准确为 GREAT ×3', session.rhythmGrade(greatAttempts).multiplier === 3)
+ok('节奏评分：三轮准确为 GOOD ×2', session.rhythmGrade(goodAttempts).multiplier === 2)
+ok('节奏评分：少于三轮为 BAD ×0', session.rhythmGrade(perfectAttempts.slice(0, 2)).multiplier === 0)
+ok('节奏评分：过早或过晚会降低单轮分数', session.rhythmRoundScore({ pressDeltaMs: 2000, releaseDeltaMs: 2800 }) < 0.5)
 
 // ---------- 短奖励账户 ----------
 let account = rewards.initStorage()
@@ -129,8 +137,15 @@ reward = rewards.claimCompletion('reward-two', 2, 0.8)
 ok('奖励：15% 区间碎片加倍', reward.bonus === 'double' && reward.fragments === 2)
 reward = rewards.claimCompletion('reward-three', 3, 0.95)
 ok('奖励：5% 区间赠送免费抽', reward.bonus === 'free_draw' && reward.freeDraws === 1)
-reward = rewards.claimCompletion('reward-pack', 20, 0.1)
-ok('奖励：第 20 次增加整包资格', reward.packDraws === 1 && rewards.getAccount().packDraws === 1)
+account = rewards.getAccount()
+account.rewardedCompletions = 19
+account.packDraws = 0
+rewards.saveAccount(account)
+reward = rewards.claimCompletion('rhythm-bad', 20, 0.1, { fragmentMultiplier: 0, grade: 'bad' })
+ok('奖励：节奏 BAD 不发碎片且不推进奖励进度', reward.fragments === 0 && rewards.getAccount().rewardedCompletions === 19 && rewards.getAccount().packDraws === 0)
+reward = rewards.claimCompletion('rhythm-perfect', 21, 0.1, { fragmentMultiplier: 4, grade: 'perfect' })
+ok('奖励：节奏 PERFECT 获得四倍碎片', reward.fragments === 4 && reward.grade === 'perfect')
+ok('奖励：第 20 次有效完成增加整包资格', reward.packDraws === 1 && rewards.getAccount().rewardedCompletions === 20 && rewards.getAccount().packDraws === 1)
 
 let draw = rewards.performDraw('single', 0, 0)
 ok('抽卡：优先使用免费次数', draw.ok && draw.cost === 'free' && draw.skin.id === 'bluesky')
@@ -153,7 +168,7 @@ const migratedSkins = wx.getStorageSync('skins')
 migratedSkins.totalDraws = 1
 wx.setStorageSync('skins', migratedSkins)
 account = rewards.initStorage()
-ok('奖励迁移：保留旧版未使用开盒资格', account.packDraws === 1 && account.totalDraws === 1 && account.firstCompletionGranted)
+ok('奖励迁移：保留旧版未使用开盒资格', account.packDraws === 1 && account.totalDraws === 1 && account.rewardedCompletions === 40 && account.firstCompletionGranted)
 
 // ---------- skins：定义完整性 ----------
 ok('共 8 款皮肤', skins.SKINS.length === 8)
