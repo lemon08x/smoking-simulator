@@ -61,9 +61,21 @@
           <view class="s-pack-fill" style="width: {{settle.inPack * 5}}%"></view>
         </view>
       </view>
-      <view class="s-btns">
-        <button wx:if="{{settle.ticketEarned}}" class="btn-gold s-btn" bindtap="goBox">开盒</button>
-        <button class="btn-gold s-btn {{settle.ticketEarned ? 's-btn-ghost' : ''}}" bindtap="onAgain">再来一根</button>
+
+      <view wx:if="{{rewardPhase !== 'revealed'}}" class="reward-card reward-{{rewardPhase}}" bindtap="onRevealReward">
+        <view class="reward-back">{{rewardPhase === 'flipping' ? '正在翻开…' : '翻开本局奖励'}}</view>
+      </view>
+      <view wx:else class="reward-card reward-front anim-flip">
+        <view class="reward-kicker">本局奖励</view>
+        <view class="reward-main">烟标碎片 ×{{settle.reward.fragments}}</view>
+        <view wx:if="{{settle.rewardTags.length}}" class="reward-tags">
+          <text wx:for="{{settle.rewardTags}}" wx:key="*this" class="reward-tag">{{item}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{rewardPhase === 'revealed'}}" class="s-btns anim-fade-up">
+        <button wx:if="{{settle.canDraw}}" class="btn-gold s-btn" bindtap="goBox">去抽烟盒</button>
+        <button class="btn-gold s-btn {{settle.canDraw ? 's-btn-ghost' : ''}}" bindtap="onAgain">再来一根</button>
         <button class="btn-ghost s-btn" bindtap="goHome">回首页</button>
       </view>
     </view>

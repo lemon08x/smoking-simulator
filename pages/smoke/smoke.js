@@ -2,6 +2,7 @@
 const calc = require('../../utils/calc')
 const skins = require('../../utils/skins')
 const session = require('../../utils/session')
+const rewards = require('../../utils/rewards')
 
 // 精灵图模块级缓存：同皮肤重复进入页面不重复烘焙
 const spriteCache = {}
@@ -14,6 +15,7 @@ Page({
     finished: false,
     showSettle: false,
     settle: null,
+    rewardPhase: 'closed',
     mode: session.MODE_FREE,
     modeName: session.MODES.free.name,
     rhythmPhase: 'inhale',
@@ -103,6 +105,7 @@ Page({
     clearTimeout(this.canvasStartTimer)
     clearTimeout(this.settleTimer)
     clearTimeout(this.stopTimer)
+    clearTimeout(this.rewardTimer)
   },
 
   startLoop() {
@@ -240,8 +243,14 @@ Page({
     this.added = true
     const result = calc.completeSession(this.sessionId)
     const total = result.total
+    const reward = rewards.claimCompletion(this.sessionId, total)
+    const account = rewards.getAccount()
+    const rewardTags = []
+    if (reward.bonus === 'double') rewardTags.push('幸运加倍')
+    if (reward.firstFree) rewardTags.push('首局免费抽')
+    if (reward.freeDraws > (reward.firstFree ? 1 : 0)) rewardTags.push('额外免费抽')
+    if (reward.packDraws) rewardTags.push('稀有保底开盒')
     const inPack = total % calc.CIGS_PER_PACK
-    const ticketEarned = inPack === 0
     this.setData({
       settle: {
         total,
@@ -249,14 +258,26 @@ Page({
         durationText: this.durationText(),
         puffs: this.data.puffs,
         line: skins.pick(skins.SETTLEMENT_LINES),
-        inPack: ticketEarned ? calc.CIGS_PER_PACK : inPack,
-        ticketEarned
+        inPack: inPack === 0 ? calc.CIGS_PER_PACK : inPack,
+        ticketEarned: reward.packDraws > 0,
+        reward,
+        rewardTags,
+        canDraw: rewards.drawAvailability(account).canSingle || rewards.drawAvailability(account).canPack
       }
     })
   },
 
   showSettle() {
     if (!this.destroyed && this.data.settle) this.setData({ showSettle: true })
+  },
+
+  onRevealReward() {
+    if (this.data.rewardPhase !== 'closed') return
+    this.setData({ rewardPhase: 'flipping' })
+    wx.vibrateShort({ type: 'medium', fail() {} })
+    this.rewardTimer = setTimeout(() => {
+      if (!this.destroyed) this.setData({ rewardPhase: 'revealed' })
+    }, 850)
   },
 
   durationText() {
@@ -269,6 +290,7 @@ Page({
 
   onAgain() {
     this.stopRhythmVibration()
+    clearTimeout(this.rewardTimer)
     this.burn = 0
     this.inhaling = false
     this.started = false
@@ -285,6 +307,7 @@ Page({
       puffs: 0,
       showHint: this.mode === session.MODE_FREE,
       settle: null,
+      rewardPhase: 'closed',
       rhythmPhase: 'inhale',
       rhythmText: '吸入',
       remainingSeconds: 45,

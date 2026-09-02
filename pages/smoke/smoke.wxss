@@ -200,7 +200,7 @@
   background: #1e2128;
   border: 1rpx solid #2c3038;
   border-radius: 32rpx;
-  padding: 44rpx 40rpx;
+  padding: 36rpx 36rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -239,7 +239,7 @@
   color: #8fd8b0;
 }
 .s-pack {
-  margin-top: 32rpx;
+  margin-top: 26rpx;
   width: 100%;
 }
 .s-pack-head {
@@ -265,11 +265,76 @@
   transition: width 0.4s ease;
 }
 .s-btns {
-  margin-top: 40rpx;
+  margin-top: 26rpx;
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: 20rpx;
+}
+
+/* 本局翻牌奖励 */
+.reward-card {
+  width: 100%;
+  min-height: 116rpx;
+  margin-top: 28rpx;
+  box-sizing: border-box;
+  border-radius: 22rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.reward-closed,
+.reward-flipping {
+  border: 1rpx solid rgba(200, 160, 99, 0.55);
+  background: linear-gradient(135deg, #392d1d, #1d2027 58%, #49351d);
+  box-shadow: inset 0 0 32rpx rgba(232, 182, 76, 0.08);
+}
+.reward-closed:active {
+  transform: scale(0.98);
+}
+.reward-flipping {
+  animation: rewardFlip 0.85s ease-in-out both;
+}
+@keyframes rewardFlip {
+  0% { transform: rotateY(0); }
+  50% { transform: rotateY(90deg); }
+  100% { transform: rotateY(0); }
+}
+.reward-back {
+  color: #e8cf9a;
+  font-size: 27rpx;
+  font-weight: 600;
+  letter-spacing: 3rpx;
+}
+.reward-front {
+  border: 1rpx solid rgba(232, 182, 76, 0.65);
+  background: radial-gradient(circle at 50% 15%, rgba(232, 182, 76, 0.2), rgba(38, 42, 50, 0.96));
+}
+.reward-kicker {
+  color: #8a8f99;
+  font-size: 20rpx;
+  letter-spacing: 4rpx;
+}
+.reward-main {
+  margin-top: 8rpx;
+  color: #f0d7a4;
+  font-size: 34rpx;
+  font-weight: 700;
+}
+.reward-tags {
+  margin-top: 12rpx;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10rpx;
+}
+.reward-tag {
+  padding: 5rpx 13rpx;
+  border-radius: 20rpx;
+  color: #d9c08e;
+  background: rgba(200, 160, 99, 0.12);
+  font-size: 19rpx;
 }
 .s-btn {
   width: 100%;
