@@ -1,83 +1,30 @@
-.container {
-  align-items: stretch;
-  gap: 28rpx;
-  padding-bottom: 60rpx;
-}
+.settings-page { overflow: hidden; }
+.profile-card { overflow: hidden; border: 1rpx solid rgba(255,255,255,0.07); border-radius: 30rpx; background: linear-gradient(145deg, #202126, #15161a); box-shadow: 0 24rpx 60rpx rgba(0,0,0,0.2); }
+.profile-head { padding: 28rpx; display: flex; align-items: center; border-bottom: 1rpx solid rgba(255,255,255,0.06); background: radial-gradient(circle at 0 0, rgba(190,142,77,0.15), transparent 45%); }
+.profile-monogram { width: 72rpx; height: 72rpx; margin-right: 18rpx; display: flex; align-items: center; justify-content: center; border: 1rpx solid rgba(224,187,127,0.36); border-radius: 22rpx; color: #1a150e; background: linear-gradient(145deg, #e2c187, #a87940); box-shadow: 0 10rpx 26rpx rgba(137,93,41,0.2); font-size: 28rpx; font-weight: 750; }
+.profile-title { color: #ece7df; font-size: 28rpx; font-weight: 650; }
+.profile-sub { margin-top: 6rpx; color: #6c6f77; font-size: 13rpx; font-weight: 700; letter-spacing: 2rpx; }
+.setting-row { min-height: 118rpx; margin-left: 28rpx; padding: 18rpx 24rpx 18rpx 0; display: flex; align-items: center; border-bottom: 1rpx solid rgba(255,255,255,0.055); box-sizing: border-box; }
+.last-row { border-bottom: 0; }
+.setting-icon { width: 48rpx; height: 48rpx; margin-right: 16rpx; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-radius: 15rpx; color: #b89765; background: rgba(190,145,79,0.09); font-size: 18rpx; font-weight: 700; }
+.row-main { flex: 1; min-width: 0; margin-right: 14rpx; }
+.row-title { color: #dfdad2; font-size: 25rpx; font-weight: 580; }
+.row-sub { margin-top: 6rpx; color: #666971; font-size: 18rpx; line-height: 1.35; }
+.price-input { width: 126rpx; height: 62rpx; padding: 0 14rpx; display: flex; align-items: center; box-sizing: border-box; border: 1rpx solid rgba(255,255,255,0.07); border-radius: 16rpx; color: #ae8852; background: #292a2f; }
+.price-input text { margin-right: 5rpx; font-size: 21rpx; }
+.price-input input { width: 78rpx; color: #e7dfd4; text-align: right; font-size: 24rpx; }
+.picker-value { max-width: 190rpx; overflow: hidden; color: #d0ad73; font-size: 22rpx; text-overflow: ellipsis; white-space: nowrap; }
+.picker-value text { margin-left: 5rpx; color: #696c73; font-size: 30rpx; }
 
-.card-head {
-  font-size: 26rpx;
-  color: #d8dce2;
-  margin-bottom: 10rpx;
-}
+.about-card { position: relative; margin-top: 20rpx; padding: 30rpx; overflow: hidden; border: 1rpx solid rgba(213,170,103,0.14); border-radius: 28rpx; background: linear-gradient(125deg, rgba(65,48,29,0.42), rgba(22,23,27,0.92) 62%); }
+.about-card::after { content: '1'; position: absolute; right: -10rpx; bottom: -70rpx; color: rgba(218,176,110,0.045); font-size: 240rpx; font-weight: 800; }
+.about-mark { color: #99784b; font-size: 14rpx; font-weight: 800; letter-spacing: 5rpx; }
+.about-title { margin-top: 10rpx; color: #e7e1d8; font-size: 28rpx; font-weight: 620; }
+.about-copy { position: relative; z-index: 1; margin-top: 12rpx; max-width: 560rpx; color: #74777f; font-size: 20rpx; line-height: 1.55; }
+.version { margin-top: 22rpx; color: #51545b; font-size: 13rpx; font-weight: 700; letter-spacing: 3rpx; }
 
-.row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 26rpx 0;
-  border-bottom: 1rpx solid #262a32;
-}
-.row:last-child {
-  border-bottom: none;
-}
-.row-main {
-  display: flex;
-  flex-direction: column;
-  margin-right: 20rpx;
-}
-.row-title {
-  font-size: 28rpx;
-  color: #e6e6e6;
-}
-.row-sub {
-  margin-top: 8rpx;
-  font-size: 22rpx;
-  color: #8a8f99;
-}
-
-.price-input {
-  display: flex;
-  align-items: center;
-  background: #262a32;
-  border-radius: 12rpx;
-  padding: 10rpx 20rpx;
-}
-.price-input .yen {
-  color: #c8a063;
-  margin-right: 8rpx;
-}
-.price-input input {
-  width: 110rpx;
-  text-align: right;
-  color: #e6e6e6;
-  font-size: 28rpx;
-}
-
-.picker-val {
-  color: #c8a063;
-  font-size: 28rpx;
-}
-
-.btn-danger {
-  background: transparent;
-  color: #d05a5a;
-  font-size: 28rpx;
-  border: 1rpx solid rgba(208, 90, 90, 0.4);
-  border-radius: 48rpx;
-  height: 84rpx;
-  line-height: 84rpx;
-}
-.btn-danger::after {
-  border: none;
-}
-
-.about {
-  margin-top: 20rpx;
-  display: flex;
-  flex-direction: column;
-  gap: 10rpx;
-  text-align: center;
-  font-size: 22rpx;
-  color: #6f7580;
-  line-height: 1.6;
-}
+.danger-zone { margin-top: 28rpx; padding: 22rpx 4rpx; display: flex; align-items: center; justify-content: space-between; }
+.danger-title { color: #b7aba6; font-size: 23rpx; font-weight: 580; }
+.danger-sub { margin-top: 5rpx; color: #5f5c5e; font-size: 17rpx; }
+.danger-button { width: 150rpx; height: 62rpx; margin: 0; line-height: 62rpx; border: 1rpx solid rgba(184,91,91,0.28); border-radius: 17rpx; color: #ba7777; background: rgba(166,75,75,0.055); font-size: 20rpx; }
+.danger-button::after { border: 0; }

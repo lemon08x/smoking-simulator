@@ -128,6 +128,14 @@ ok('抽卡页：单抽揭晓烟盒', draw.data.phase === 'reveal' && draw.data.r
 ok('抽卡页：免费次数已消费', draw.data.account && draw.data.account.freeDraws === box.data.freeDraws - 1, draw.data.account)
 draw.onUnload()
 
+// 统计页的保底进度与有效奖励次数保持一致
+const statsAccount = rewards.getAccount()
+statsAccount.rewardedCompletions = 7
+rewards.saveAccount(statsAccount)
+const statsPage = loadPage('pages/stats/stats.js')
+statsPage.refresh()
+ok('统计页：保底进度使用有效完成次数', statsPage.data.inPack === 7)
+
 // 自由模式保持原有按住/松开交互
 const free = loadPage('pages/smoke/smoke.js')
 free.onLoad({ mode: 'free' })

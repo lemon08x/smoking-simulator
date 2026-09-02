@@ -1,85 +1,113 @@
-<view class="container">
-  <!-- 今日三连数据 -->
-  <view class="stats anim-fade-up">
-    <view class="stat">
-      <text class="v">{{today}}</text>
-      <text class="k">今日 · 根</text>
+<view class="container home">
+  <view class="ambient ambient-one"></view>
+  <view class="ambient ambient-two"></view>
+
+  <view class="home-head anim-fade-up">
+    <view>
+      <view class="brand-en">ONE LESS</view>
+      <view class="brand-cn">戒一根</view>
     </view>
-    <view class="divider"></view>
-    <view class="stat">
-      <text class="v">{{moneyText}}</text>
-      <text class="k">累计省下</text>
-    </view>
-    <view class="divider"></view>
-    <view class="stat">
-      <text class="v">{{lifeText}}</text>
-      <text class="k">寿命 +</text>
+    <view class="streak-pill">
+      <view class="streak-flame"></view>
+      <text>连续 {{streak}} 天</text>
     </view>
   </view>
 
-  <!-- 当前烟盒 -->
-  <view class="hero anim-pop" bindtap="goBox">
-    <pack skin="{{skin}}" size="hero" />
+  <view class="hero-stage anim-pop" bindtap="goBox">
+    <view class="hero-label">CURRENT COLLECTION</view>
+    <view class="pack-halo"></view>
+    <view class="pack-wrap"><pack skin="{{skin}}" size="hero" /></view>
+    <view class="pedestal"></view>
     <view class="skin-meta">
       <text class="skin-name">{{skin.name}}</text>
       <view class="rarity-tag rarity-{{skin.rarity}}">{{rarityName}}</view>
     </view>
-    <view class="change-hint">点击换肤 ›</view>
+    <view class="change-hint">轻触查看烟盒收藏 <text>→</text></view>
   </view>
 
-  <!-- 连续戒断 -->
-  <view class="streak anim-fade-up">🔥 连续戒断 <text class="streak-num">{{streak}}</text> 天</view>
-
-  <view class="reward-wallet anim-fade-up" bindtap="goBox">
-    <view class="wallet-item"><text class="wallet-v">{{fragments}}/5</text><text class="wallet-k">烟标碎片</text></view>
-    <view class="wallet-line"></view>
-    <view class="wallet-item"><text class="wallet-v">{{freeDraws}}</text><text class="wallet-k">免费单抽</text></view>
-    <view class="wallet-line"></view>
-    <view class="wallet-item"><text class="wallet-v">{{packDraws}}</text><text class="wallet-k">保底开盒</text></view>
-    <text class="wallet-arrow">›</text>
-  </view>
-
-  <!-- 健康里程碑 -->
-  <view class="ms anim-fade-up">
-    <view class="ms-head">
-      <text class="ms-title">下一站 · {{ms.title}}</text>
-      <text class="ms-desc">{{ms.desc}}</text>
+  <view class="stats-strip anim-fade-up">
+    <view class="stat-main">
+      <text class="stat-value">{{today}}</text>
+      <text class="stat-label">今日挡下</text>
     </view>
-    <view class="ms-bar">
-      <view class="ms-fill" style="width: {{ms.pct}}%"></view>
+    <view class="stat-divider"></view>
+    <view class="stat-item">
+      <text class="stat-value small">{{moneyText}}</text>
+      <text class="stat-label">累计省下</text>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-item">
+      <text class="stat-value small">{{lifeText}}</text>
+      <text class="stat-label">赢回时间</text>
     </view>
   </view>
 
-  <!-- 点烟入口 -->
-  <view class="cta">
-    <view wx:if="{{canDraw}}" class="ticket-tip anim-pop" bindtap="goBox">
-      🎁 有可用抽卡，去看看
+  <view class="reward-panel anim-fade-up" bindtap="goBox">
+    <view class="panel-copy">
+      <view class="panel-kicker">REWARD WALLET</view>
+      <view class="panel-title">奖励账户</view>
     </view>
-    <button class="btn-gold btn-light" bindtap="onSmoke">🚬 点一根</button>
-    <view class="hint">自由掌控，或跟随 45 秒节奏</view>
+    <view class="wallet-values">
+      <view class="wallet-item"><text class="wallet-value">{{fragments}}</text><text class="wallet-label">碎片 / 5</text></view>
+      <view class="wallet-item"><text class="wallet-value">{{freeDraws}}</text><text class="wallet-label">免费抽</text></view>
+      <view class="wallet-item"><text class="wallet-value">{{packDraws}}</text><text class="wallet-label">保底</text></view>
+    </view>
+    <view class="panel-arrow">›</view>
+  </view>
+
+  <view class="milestone anim-fade-up">
+    <view class="milestone-top">
+      <view>
+        <view class="milestone-kicker">NEXT MILESTONE</view>
+        <view class="milestone-title">{{ms.title}}</view>
+      </view>
+      <text class="milestone-pct">{{ms.pct}}%</text>
+    </view>
+    <view class="milestone-desc">{{ms.desc}}</view>
+    <view class="milestone-bar"><view class="milestone-fill" style="width: {{ms.pct}}%"></view></view>
+  </view>
+
+  <view class="cta anim-fade-up">
+    <view wx:if="{{canDraw}}" class="draw-ready" bindtap="goBox">
+      <view class="ready-dot"></view>
+      <text>有一份奖励等待开启</text>
+      <text class="ready-arrow">›</text>
+    </view>
+    <button class="btn-gold smoke-button" bindtap="onSmoke">
+      <view class="button-copy">
+        <text class="button-title">开始这一根</text>
+        <text class="button-sub">选择自由模式或 45 秒节奏</text>
+      </view>
+      <text class="button-arrow">→</text>
+    </button>
   </view>
 
   <view wx:if="{{showModePicker}}" class="mode-mask" bindtap="closeModePicker">
     <view class="mode-sheet anim-pop" catchtap="noop">
-      <view class="mode-title">这根怎么抽？</view>
-      <view class="mode-subtitle">两种玩法都会自然燃尽并自动结算</view>
+      <view class="sheet-handle"></view>
+      <view class="mode-kicker">CHOOSE A SESSION</view>
+      <view class="mode-title">这一根，怎么完成？</view>
+      <view class="mode-subtitle">香烟都会自然燃尽，区别在于你的参与方式</view>
+
       <button class="mode-option {{lastMode === 'free' ? 'mode-last' : ''}}" data-mode="free" bindtap="startMode">
-        <view class="mode-icon">🚬</view>
+        <view class="mode-icon"><text>自</text></view>
         <view class="mode-copy">
           <text class="mode-name">自由模式</text>
-          <text class="mode-desc">按住吸入 · 松开吐烟</text>
+          <text class="mode-desc">按住吸入，松开吐出，自己掌握节奏</text>
         </view>
-        <text class="mode-arrow">›</text>
+        <text class="mode-arrow">→</text>
       </button>
-      <button class="mode-option {{lastMode === 'rhythm' ? 'mode-last' : ''}}" data-mode="rhythm" bindtap="startMode">
-        <view class="mode-icon">〰️</view>
+
+      <button class="mode-option rhythm-option {{lastMode === 'rhythm' ? 'mode-last' : ''}}" data-mode="rhythm" bindtap="startMode">
+        <view class="mode-icon rhythm-icon"><text>节</text></view>
         <view class="mode-copy">
-          <text class="mode-name">45 秒节奏</text>
-          <text class="mode-desc">按住松开 · 成绩决定奖励</text>
+          <view class="mode-name-row"><text class="mode-name">45 秒节奏</text><text class="reward-badge">最高 ×4</text></view>
+          <text class="mode-desc">跟随提示按住与松开，成绩决定奖励</text>
         </view>
-        <text class="mode-arrow">›</text>
+        <text class="mode-arrow">→</text>
       </button>
-      <button class="mode-cancel" bindtap="closeModePicker">先等等</button>
+
+      <button class="mode-cancel" bindtap="closeModePicker">稍后再说</button>
     </view>
   </view>
 </view>

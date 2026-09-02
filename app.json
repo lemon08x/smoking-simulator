@@ -9,15 +9,15 @@
   ],
   "window": {
     "navigationBarTitleText": "戒一根",
-    "navigationBarBackgroundColor": "#16181d",
+    "navigationBarBackgroundColor": "#0d0e11",
     "navigationBarTextStyle": "white",
-    "backgroundColor": "#16181d",
+    "backgroundColor": "#0d0e11",
     "backgroundTextStyle": "dark"
   },
   "tabBar": {
-    "color": "#8a8f99",
-    "selectedColor": "#c8a063",
-    "backgroundColor": "#16181d",
+    "color": "#737780",
+    "selectedColor": "#d0aa6a",
+    "backgroundColor": "#0d0e11",
     "borderStyle": "black",
     "list": [
       {
