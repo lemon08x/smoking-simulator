@@ -76,17 +76,20 @@ function initialSkinId() {
 }
 
 // 抽奖：先按稀有度权重 roll（仅含有可抽皮肤的档位），再档内均匀
-function rollSkin() {
-  const keys = Object.keys(RARITY).filter(k => SKINS.some(s => s.rarity === k && !s.initial))
+function rollSkin(options = {}) {
+  const allowed = options.rarities || Object.keys(RARITY)
+  const keys = allowed.filter(k => RARITY[k] && SKINS.some(s => s.rarity === k && !s.initial))
   const total = keys.reduce((sum, k) => sum + RARITY[k].weight, 0)
-  let r = Math.random() * total
+  const tierRandom = options.randomTier === undefined ? Math.random() : options.randomTier
+  const itemRandom = options.randomItem === undefined ? Math.random() : options.randomItem
+  let r = Math.max(0, Math.min(0.999999, tierRandom)) * total
   let hit = keys[0]
   for (const k of keys) {
     r -= RARITY[k].weight
     if (r <= 0) { hit = k; break }
   }
   const pool = SKINS.filter(s => s.rarity === hit && !s.initial)
-  return pool[Math.floor(Math.random() * pool.length)]
+  return pool[Math.floor(Math.max(0, Math.min(0.999999, itemRandom)) * pool.length)]
 }
 
 // ---------- 文案库 ----------

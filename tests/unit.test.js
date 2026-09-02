@@ -12,6 +12,7 @@ const path = require('path')
 const calc = require(path.join(__dirname, '..', 'utils', 'calc.js'))
 const skins = require(path.join(__dirname, '..', 'utils', 'skins.js'))
 const session = require(path.join(__dirname, '..', 'utils', 'session.js'))
+const rewards = require(path.join(__dirname, '..', 'utils', 'rewards.js'))
 
 let failed = 0
 let passed = 0
@@ -113,6 +114,46 @@ rhythm = session.rhythmState(45000)
 ok('节奏：45 秒完成且进度封顶', rhythm.finished && rhythm.phase === 'done' && rhythm.progress === 1 && rhythm.remainingSeconds === 0)
 rhythm = session.rhythmState(90000)
 ok('节奏：跳帧后仍正确封顶', rhythm.finished && rhythm.elapsedMs === 45000 && rhythm.progress === 1)
+
+// ---------- 短奖励账户 ----------
+let account = rewards.initStorage()
+ok('奖励：新账户资源为零', account.fragments === 0 && account.freeDraws === 0 && account.packDraws === 0)
+let reward = rewards.claimCompletion('reward-one', 1, 0.1)
+account = rewards.getAccount()
+ok('奖励：每局固定一个碎片', reward.fragments === 1 && account.fragments === 1)
+ok('奖励：第一次完成赠送免费抽', reward.firstFree && account.freeDraws === 1)
+const duplicateReward = rewards.claimCompletion('reward-one', 1, 0.99)
+account = rewards.getAccount()
+ok('奖励：同一会话只领取一次', duplicateReward.duplicate && account.fragments === 1 && account.freeDraws === 1)
+reward = rewards.claimCompletion('reward-two', 2, 0.8)
+ok('奖励：15% 区间碎片加倍', reward.bonus === 'double' && reward.fragments === 2)
+reward = rewards.claimCompletion('reward-three', 3, 0.95)
+ok('奖励：5% 区间赠送免费抽', reward.bonus === 'free_draw' && reward.freeDraws === 1)
+reward = rewards.claimCompletion('reward-pack', 20, 0.1)
+ok('奖励：第 20 次增加整包资格', reward.packDraws === 1 && rewards.getAccount().packDraws === 1)
+
+let draw = rewards.performDraw('single', 0, 0)
+ok('抽卡：优先使用免费次数', draw.ok && draw.cost === 'free' && draw.skin.id === 'bluesky')
+account = rewards.getAccount()
+account.freeDraws = 0
+account.fragments = 5
+rewards.saveAccount(account)
+draw = rewards.performDraw('single', 0, 0)
+ok('抽卡：五碎片单抽', draw.ok && draw.cost === 'fragments')
+ok('抽卡：普通重复返还一个碎片', draw.duplicate && draw.refund === 1 && rewards.getAccount().fragments === 1)
+account = rewards.getAccount()
+account.packDraws = 1
+rewards.saveAccount(account)
+draw = rewards.performDraw('pack', 0.999, 0)
+ok('抽卡：整包保底不出现普通', draw.ok && draw.kind === 'pack' && draw.skin.rarity === 'legend')
+
+wx.removeStorageSync('rewards')
+wx.setStorageSync('total', 40)
+const migratedSkins = wx.getStorageSync('skins')
+migratedSkins.totalDraws = 1
+wx.setStorageSync('skins', migratedSkins)
+account = rewards.initStorage()
+ok('奖励迁移：保留旧版未使用开盒资格', account.packDraws === 1 && account.totalDraws === 1 && account.firstCompletionGranted)
 
 // ---------- skins：定义完整性 ----------
 ok('共 8 款皮肤', skins.SKINS.length === 8)
